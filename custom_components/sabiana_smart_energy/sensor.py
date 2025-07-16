@@ -17,6 +17,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import CoordinatorEntity, DataUpdateCoordinator
 
 from .const import DOMAIN, CONF_SLAVE
+from .info_sensor import SabianaInfoCoordinator, SabianaInfoSensor
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -45,6 +46,20 @@ async def async_setup_entry(
 ) -> None:
     _LOGGER.debug("Set up the Modbus sensors from a config entry.")
 
+
+info_coordinator = SabianaInfoCoordinator(hass, entry)
+    await info_coordinator.async_config_entry_first_refresh()
+
+    info_sensors = [
+        SabianaInfoSensor(info_coordinator, "serial", "RVU Serial Number"),
+        SabianaInfoSensor(info_coordinator, "model", "RVU Controller Model"),
+        SabianaInfoSensor(info_coordinator, "fw_release", "RVU Firmware Release"),
+        SabianaInfoSensor(info_coordinator, "protocol_release", "RVU Protocol Release"),
+        SabianaInfoSensor(info_coordinator, "tep_release", "RVU TEP Firmware Release"),
+    ]
+    async_add_entities(info_sensors)
+
+    
     coordinator = SabianaModbusCoordinator(hass, entry)
     await coordinator.async_config_entry_first_refresh()
 
