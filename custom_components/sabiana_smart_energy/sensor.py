@@ -47,19 +47,19 @@ async def async_setup_entry(
     _LOGGER.debug("Set up the Modbus sensors from a config entry.")
 
 
-info_coordinator = SabianaInfoCoordinator(hass, entry)
+    info_coordinator = SabianaInfoCoordinator(hass, entry)
     await info_coordinator.async_config_entry_first_refresh()
 
     info_sensors = [
-        SabianaInfoSensor(info_coordinator, "serial", "RVU Serial Number"),
-        SabianaInfoSensor(info_coordinator, "model", "RVU Controller Model"),
-        SabianaInfoSensor(info_coordinator, "fw_release", "RVU Firmware Release"),
-        SabianaInfoSensor(info_coordinator, "protocol_release", "RVU Protocol Release"),
-        SabianaInfoSensor(info_coordinator, "tep_release", "RVU TEP Firmware Release"),
+        SabianaInfoSensor(info_coordinator, "serial", "RVU Serial Number", None, entry.entry_id),
+        SabianaInfoSensor(info_coordinator, "model", "RVU Model", None, entry.entry_id),
+        SabianaInfoSensor(info_coordinator, "fw_release", "Firmware Release", None, entry.entry_id),
+        SabianaInfoSensor(info_coordinator, "protocol_release", "Protocol Release", None, entry.entry_id),
+        SabianaInfoSensor(info_coordinator, "tep_release", "T-EP Firmware", None, entry.entry_id)
     ]
     async_add_entities(info_sensors)
 
-    
+
     coordinator = SabianaModbusCoordinator(hass, entry)
     await coordinator.async_config_entry_first_refresh()
 

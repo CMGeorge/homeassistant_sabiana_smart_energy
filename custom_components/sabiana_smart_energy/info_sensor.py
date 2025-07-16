@@ -38,7 +38,7 @@ class SabianaInfoCoordinator(DataUpdateCoordinator):
         try:
             self.client.connect()
 
-            result = self.client.read_holding_registers(0x0000, 7, slave=self.slave)
+            result = self.client.read_holding_registers(address=0x0000, count=7, slave=self.slave)
             if not result.isError():
                 chars = ''.join(
                     chr((reg >> 8) & 0xFF) + chr(reg & 0xFF)
@@ -49,7 +49,7 @@ class SabianaInfoCoordinator(DataUpdateCoordinator):
                 results["serial"] = None
 
             def read_register(addr, key):
-                res = self.client.read_holding_registers(addr, 1, slave=self.slave)
+                res = self.client.read_holding_registers(address=addr, count=1, slave=self.slave)
                 results[key] = res.registers[0] if not res.isError() else None
 
             read_register(0x000A, "model")
@@ -73,17 +73,17 @@ class SabianaInfoCoordinator(DataUpdateCoordinator):
 
 
 class SabianaInfoSensor(CoordinatorEntity, SensorEntity):
-    def __init__(self, coordinator, key, name, unit=None):
+    def __init__(self, coordinator, key, name, unit=None,entry_id: str,):
         super().__init__(coordinator)
         self._key = key
         self._attr_name = name
         self._attr_unique_id = f"sabiana_info_{key}"
         self._attr_native_unit_of_measurement = unit
         self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, "sabiana_info")},
+            identifiers={(DOMAIN, entry_id)},
             name="Sabiana RVU Info",
             manufacturer="Sabiana",
-            model="Smart Pro"
+            model="Smart Pro",
         )
 
     @property
