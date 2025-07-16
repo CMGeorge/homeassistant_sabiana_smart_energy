@@ -24,6 +24,7 @@ class SabianaInfoCoordinator(DataUpdateCoordinator):
         self.host = entry.data[CONF_HOST]
         self.port = entry.data[CONF_PORT]
         self.slave = entry.data[CONF_SLAVE]
+        self.entry_id = entry.entry_id
         self.client = ModbusTcpClient(self.host, port=self.port)
 
         super().__init__(
@@ -38,6 +39,7 @@ class SabianaInfoCoordinator(DataUpdateCoordinator):
         try:
             self.client.connect()
 
+            # Read Serial Number (14 chars from 7 registers)
             result = self.client.read_holding_registers(address=0x0000, count=7, slave=self.slave)
             if not result.isError():
                 chars = ''.join(
@@ -73,15 +75,15 @@ class SabianaInfoCoordinator(DataUpdateCoordinator):
 
 
 class SabianaInfoSensor(CoordinatorEntity, SensorEntity):
-    def __init__(self, coordinator, key, name, unit=None,entry_id: str,):
+    def __init__(self, coordinator: SabianaInfoCoordinator, key: str, name: str, unit: str | None, entry_id: str):
         super().__init__(coordinator)
         self._key = key
         self._attr_name = name
         self._attr_unique_id = f"sabiana_info_{key}"
         self._attr_native_unit_of_measurement = unit
         self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, entry_id)},
-            name="Sabiana RVU Info",
+            identifiers={(DOMAIN, entry_id)},  # Same device identifier as other sensors
+            name="Sabiana RVU",
             manufacturer="Sabiana",
             model="Smart Pro",
         )
