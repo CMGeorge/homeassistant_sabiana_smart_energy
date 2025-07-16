@@ -1,13 +1,21 @@
 {
-  "domain": "sabiana_energy_smart",
-  "name": "Sabiana Energy Smart",
-  "version": "1.0.0",
-  "config_flow": true,
-  "documentation": "https://wesell.ro",
-  "requirements": ["pymodbus>=3.0.0"],
-  "dependencies": ["modbus"],
-  "codeowners": ["@cmgeorge"],
-  "iot_class": "local_polling",
-  "integration_type": "hub",
-  "logo": "custom_components/sabiana_energy_smart/icon.png"
+    "domain": "sabiana_energy_smart",
+    "name": "Sabiana Energy Smart",
+    "version": "1.0.1",
+    "config_flow": true,
+    "documentation": "https://hass.wesell.ro/custom_components/sabiana_energy_smart",
+    "requirements":
+    [
+        "pymodbus>=3.0.0"
+    ],
+    "dependencies":
+    [
+        "modbus"
+    ],
+    "codeowners":
+    [
+        "@cmgeorge"
+    ],
+    "iot_class": "local_polling",
+    "integration_type": "hub"
 }
