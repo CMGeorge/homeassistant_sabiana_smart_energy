@@ -1,13 +1,9 @@
 from __future__ import annotations
-
 import voluptuous as vol
-
 from homeassistant import config_entries
 from homeassistant.data_entry_flow import FlowResult
 from homeassistant.const import CONF_HOST, CONF_PORT, CONF_NAME, CONF_SLAVE
-
 from .const import DOMAIN
-
 
 class MyModbusDeviceConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """Handle a config flow for My Modbus Device."""
@@ -15,14 +11,10 @@ class MyModbusDeviceConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     VERSION = 1
 
     def __init__(self):
-        """Initialize flow."""
         self._errors = {}
 
     async def async_step_user(self, user_input=None) -> FlowResult:
-        """Handle the initial step."""
-
         if user_input is not None:
-            # Optional: Check for duplicate entries
             existing = [
                 entry for entry in self._async_current_entries()
                 if entry.data[CONF_HOST] == user_input[CONF_HOST]
@@ -30,7 +22,6 @@ class MyModbusDeviceConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             ]
             if existing:
                 return self.async_abort(reason="already_configured")
-
             return self.async_create_entry(title=user_input[CONF_NAME], data=user_input)
 
         return self.async_show_form(

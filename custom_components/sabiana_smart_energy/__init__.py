@@ -1,42 +1,35 @@
-from __future__ import annotations
-
-from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import HomeAssistant
-from homeassistant.helpers.typing import ConfigType
-
-from .const import DOMAIN
-
 import logging
+from homeassistant.core import HomeAssistant
+from homeassistant.config_entries import ConfigEntry
+from .modbus_coordinator import SabianaModbusCoordinator
+# from .info_sensor import SabianaInfoCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 
-async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
-    """Set up integration from YAML (not supported)."""
-    _LOGGER.debug("Nothing special here")
-    return True
-
+DOMAIN = "sabiana_energy_smart"
+PLATFORMS = ["sensor","number","switch","binary_sensor","select"]
+# , "number", "switch", "binary_sensor", "select"]
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    """Set up from config entry."""
-    _LOGGER.debug("Setting up Sabaiana Entry: %s", entry.title)
+    """Set up Sabiana Energy Smart from a config entry."""
+    _LOGGER.debug("Initializing Sabiana integration")
 
-    hass.data.setdefault(DOMAIN, {})
-    hass.data[DOMAIN][entry.entry_id] = entry.data
+    coordinator = SabianaModbusCoordinator(hass, entry.data)
+    await coordinator.async_setup()
+    await coordinator.async_config_entry_first_refresh()
 
-    # Forward to sensor platform
-    # hass.async_create_task(
-    await hass.config_entries.async_forward_entry_setups(entry, ["sensor","binary_sensor"])
-    # )
+    hass.data.setdefault(DOMAIN, {})[entry.entry_id] = coordinator
 
+    # info_coordinator = SabianaInfoCoordinator(hass, entry)
+    # info = await info_coordinator._async_update_data()
+
+    await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+
+    _LOGGER.info("Sabiana Energy Smart integration initialized successfully")
     return True
 
-
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    """Unload config entry."""
-
-    unload_ok = await hass.config_entries.async_forward_entry_unload(entry, "sensor")
-    unload_binary = await hass.config_entries.async_forward_entry_unload(entry, "binary_sensor")
-    if unload_ok:
-        hass.data[DOMAIN].pop(entry.entry_id)
-
+    """Unload a config entry."""
+    coordinator = hass.data[DOMAIN].pop(entry.entry_id)
+    unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
     return unload_ok

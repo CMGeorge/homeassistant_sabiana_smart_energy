@@ -1,93 +1,88 @@
-# info_sensor.py
-
 from __future__ import annotations
-
-from datetime import timedelta
 import logging
+from typing import Any
 
-from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, CoordinatorEntity
 from homeassistant.components.sensor import SensorEntity
-from homeassistant.helpers.entity import DeviceInfo
-from homeassistant.const import CONF_HOST, CONF_PORT
-from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.helpers.entity import DeviceInfo
+from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.entity import EntityCategory
 
-from pymodbus.client import ModbusTcpClient
-
-from .const import DOMAIN, CONF_SLAVE
+from .const import DOMAIN, FIRMWARE_INFO, get_device_info
+from .helpers import decode_modbus_value
 
 _LOGGER = logging.getLogger(__name__)
 
+SENSOR_DEFINITIONS = [
+    {**reg, "address": addr}
+    for addr, reg in FIRMWARE_INFO.items()
+    if reg.get("readable")
+]
 
-class SabianaInfoCoordinator(DataUpdateCoordinator):
-    def __init__(self, hass: HomeAssistant, entry: ConfigEntry):
-        self.host = entry.data[CONF_HOST]
-        self.port = entry.data[CONF_PORT]
-        self.slave = entry.data[CONF_SLAVE]
-        self.entry_id = entry.entry_id
-        self.client = ModbusTcpClient(self.host, port=self.port)
+async def async_setup_entry(
+    hass: HomeAssistant,
+    entry: ConfigEntry,
+    async_add_entities: AddEntitiesCallback,
+) -> None:
+    coordinator = hass.data[DOMAIN][entry.entry_id]
+    sensors = []
 
-        super().__init__(
-            hass,
-            _LOGGER,
-            name="Sabiana Info Coordinator",
-            update_interval=timedelta(hours=1),
+    for definition in SENSOR_DEFINITIONS:
+        sensors.append(
+            SabianaFirmwareSensor(coordinator._client, definition, entry.entry_id)
         )
 
-    async def _async_update_data(self) -> dict[str, str | int | None]:
-        results = {}
+    _LOGGER.debug("Adding %d firmware diagnostic sensors", len(sensors))
+    async_add_entities(sensors)
+
+
+class SabianaFirmwareSensor(SensorEntity):
+    """Static diagnostic sensor for Sabiana RVU firmware info."""
+
+    def __init__(
+        self,
+        client: Any,  # SabianaModbusClient
+        reg: dict[str, Any],
+        entry_id: str,
+    ):
+        self._client = client
+        self._address = reg["address"]
+        self._scale = reg.get("scale", 1)
+        self._precision = reg.get("precision", 0)
+        self._type = reg.get("type", "uns16")
+        self._length = reg.get("dataLength", 1)
+        self._raw_value: list[int] | None = None
+
+        self._attr_name = reg["name"]
+        self._attr_unique_id = f"sabiana_diag_{reg['key']}"
+        self._attr_native_unit_of_measurement = reg.get("unit", "")
+        self._attr_device_class = reg.get("device_class")
+        self._attr_entity_category = EntityCategory.DIAGNOSTIC
+        self._attr_device_info = DeviceInfo(**get_device_info(entry_id))
+
+    async def async_added_to_hass(self) -> None:
+        """Read the value only once when the entity is added."""
         try:
-            self.client.connect()
-
-            # Read Serial Number (14 chars from 7 registers)
-            result = self.client.read_holding_registers(address=0x0000, count=7, slave=self.slave)
-            if not result.isError():
-                chars = ''.join(
-                    chr((reg >> 8) & 0xFF) + chr(reg & 0xFF)
-                    for reg in result.registers
-                ).strip()
-                results["serial"] = chars
-            else:
-                results["serial"] = None
-
-            def read_register(addr, key):
-                res = self.client.read_holding_registers(address=addr, count=1, slave=self.slave)
-                results[key] = res.registers[0] if not res.isError() else None
-
-            read_register(0x000A, "model")
-            read_register(0x000B, "fw_release")
-            read_register(0x000C, "protocol_release")
-            read_register(0x000D, "tep_release")
-
-            self.client.close()
+            result = await self._client.read_register(
+                address=self._address,
+                count=self._length,
+                slave=1  # or from config if needed
+            )
+            self._raw_value = result if isinstance(result, list) else [result]
+            _LOGGER.debug(
+                "%s read at 0x%04X → %s", self.name, self._address, self._raw_value
+            )
+            self.async_write_ha_state()
         except Exception as e:
-            _LOGGER.error("Error reading device info: %s", e)
-            self.client.close()
-            return {
-                "serial": None,
-                "model": None,
-                "fw_release": None,
-                "protocol_release": None,
-                "tep_release": None,
-            }
-
-        return results
-
-
-class SabianaInfoSensor(CoordinatorEntity, SensorEntity):
-    def __init__(self, coordinator: SabianaInfoCoordinator, key: str, name: str, unit: str | None, entry_id: str):
-        super().__init__(coordinator)
-        self._key = key
-        self._attr_name = name
-        self._attr_unique_id = f"sabiana_info_{key}"
-        self._attr_native_unit_of_measurement = unit
-        self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, entry_id)},  # Same device identifier as other sensors
-            name="Sabiana RVU",
-            manufacturer="Sabiana",
-            model="Smart Pro",
-        )
+            _LOGGER.warning("Failed to read diagnostic sensor %s: %s", self.name, e)
 
     @property
-    def native_value(self):
-        return self.coordinator.data.get(self._key)
+    def native_value(self) -> str | float | None:
+        return decode_modbus_value(
+            raw=self._raw_value,
+            type_=self._type,
+            data_length=self._length,
+            scale=self._scale,
+            precision=self._precision,
+        )
