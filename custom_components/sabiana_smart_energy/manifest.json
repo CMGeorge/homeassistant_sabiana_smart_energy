@@ -1,9 +1,10 @@
 {
     "domain": "sabiana_energy_smart",
     "name": "Sabiana Energy Smart",
-    "version": "1.0.1",
+    "version": "1.0.4",
     "config_flow": true,
-    "documentation": "https://hass.wesell.ro/custom_components/sabiana_energy_smart",
+    "documentation": "https://github.com/CMGeorge/homeassistant_sabiana_smart_energy/blob/main/README.md",
+    "issue_tracker": "https://github.com/CMGeorge/homeassistant_sabiana_smart_energy/issues",
     "requirements":
     [
         "pymodbus>=3.0.0"
