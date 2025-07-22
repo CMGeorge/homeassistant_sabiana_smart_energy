@@ -6,16 +6,14 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
 from .modbus_client import SabianaModbusClient
-
-_LOGGER = logging.getLogger(__name__)
-
+from .const import LOGGER
 class SabianaModbusCoordinator(DataUpdateCoordinator):
     """Coordinator that polls only the Modbus addresses registered by entities."""
 
     def __init__(self, hass: HomeAssistant, config: dict[str, Any]) -> None:
         super().__init__(
             hass,
-            _LOGGER,
+            LOGGER,
             name="Sabiana Modbus Coordinator",
             update_interval=timedelta(seconds=3),
         )
@@ -28,7 +26,7 @@ class SabianaModbusCoordinator(DataUpdateCoordinator):
     def register_address(self, address: int) -> None:
         """Register a Modbus address to be polled."""
         self._active_addresses.add(address)
-        _LOGGER.debug("Registered address 0x%04X for polling", address)
+        LOGGER.debug("Registered address 0x%04X for polling", address)
 
     async def async_setup(self) -> None:
         """Connect the Modbus client."""
@@ -42,9 +40,9 @@ class SabianaModbusCoordinator(DataUpdateCoordinator):
             try:
                 value = await self._client.read_register(address=addr, count=1, slave=self._slave)
                 results[addr] = value[0] if value else None
-                _LOGGER.debug("Read 0x%04X → %s", addr, results[addr])
+                LOGGER.debug("Read 0x%04X → %s", addr, results[addr])
             except Exception as err:
-                _LOGGER.error("Error reading register 0x%04X: %s", addr, err)
+                LOGGER.error("Error reading register 0x%04X: %s", addr, err)
                 results[addr] = None
 
         return results

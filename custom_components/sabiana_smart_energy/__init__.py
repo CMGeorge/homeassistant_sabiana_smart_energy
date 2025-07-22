@@ -1,18 +1,39 @@
 import logging
 from homeassistant.core import HomeAssistant
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import (
+    # CONF_IP_ADDRESS,
+    # CONF_MODEL,
+    # EVENT_HOMEASSISTANT_STOP,
+    Platform,
+)
+
 from .modbus_coordinator import SabianaModbusCoordinator
+from .const import LOGGER
 # from .info_sensor import SabianaInfoCoordinator
 
-_LOGGER = logging.getLogger(__name__)
+# _LOGGER = logging.getLogger(__name__)
 
 DOMAIN = "sabiana_energy_smart"
-PLATFORMS = ["sensor","number","switch","binary_sensor","select"]
+
+PLATFORMS: list[Platform] = [
+    Platform.BINARY_SENSOR,
+    # Platform.BUTTON,
+    # Platform.CLIMATE,
+    Platform.NUMBER,
+    Platform.SELECT,
+    Platform.SENSOR,
+    Platform.SWITCH,
+]
+
+
+# PLATFORMS = ["sensor"]
+# PLATFORMS = ["sensor","number","switch","binary_sensor","select"]
 # , "number", "switch", "binary_sensor", "select"]
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up Sabiana Energy Smart from a config entry."""
-    _LOGGER.debug("Initializing Sabiana integration")
+    LOGGER.debug("Initializing Sabiana integration")
 
     coordinator = SabianaModbusCoordinator(hass, entry.data)
     await coordinator.async_setup()
@@ -25,7 +46,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
-    _LOGGER.info("Sabiana Energy Smart integration initialized successfully")
+    LOGGER.info("Sabiana Energy Smart integration initialized successfully")
     return True
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:

@@ -9,9 +9,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.helpers.entity import DeviceInfo
 
-from .const import DOMAIN, REGISTER_DEFINITIONS, get_device_info
-
-_LOGGER = logging.getLogger(__name__)
+from .const import DOMAIN, REGISTER_DEFINITIONS, LOGGER, get_device_info
 
 async def async_setup_entry(
     hass: HomeAssistant,
@@ -22,7 +20,7 @@ async def async_setup_entry(
     selects = []
 
     for addr, reg in REGISTER_DEFINITIONS.items():
-        if reg.get("options") and reg.get("writable"):
+        if reg.get("options") and reg.get("writable") and not reg.get("entity_type") == "switch":
             coordinator.register_address(addr)
             selects.append(
                 SabianaModbusSelect(
@@ -33,7 +31,7 @@ async def async_setup_entry(
                 )
             )
 
-    _LOGGER.debug("Adding %d Modbus select entities", len(selects))
+    LOGGER.debug("Adding %d Modbus select entities", len(selects))
     async_add_entities(selects)
 
 
@@ -57,23 +55,23 @@ class SabianaModbusSelect(CoordinatorEntity, SelectEntity):
         self._attr_options = list(self._reverse_map.keys())
         self._attr_device_info = DeviceInfo(**get_device_info(entry_id))
 
-        _LOGGER.debug("Initialized select '%s' with options: %s", self.name, self._attr_options)
+        LOGGER.debug("Initialized select '%s' with options: %s", self.name, self._attr_options)
 
     @property
     def current_option(self) -> str | None:
         raw = self.coordinator.data.get(self._address)
         if raw is None:
-            _LOGGER.debug("No data at 0x%04X for select %s", self._address, self.name)
+            LOGGER.debug("No data at 0x%04X for select %s", self._address, self.name)
             return None
 
         val = raw[0] if isinstance(raw, list) else raw
         label = self._options_map.get(val)
-        _LOGGER.debug("%s: raw=%s → mapped='%s'", self.name, val, label)
+        LOGGER.debug("%s: raw=%s → mapped='%s'", self.name, val, label)
         return label
 
     async def async_select_option(self, option: str) -> None:
         if option not in self._reverse_map:
-            _LOGGER.warning("Invalid selection '%s' for %s", option, self.name)
+            LOGGER.warning("Invalid selection '%s' for %s", option, self.name)
             return
 
         value = self._reverse_map[option]
@@ -83,7 +81,7 @@ class SabianaModbusSelect(CoordinatorEntity, SelectEntity):
                 value=value,
                 slave=self.coordinator._slave
             )
-            _LOGGER.debug("Wrote value %d to 0x%04X for option '%s'", value, self._address, option)
+            LOGGER.debug("Wrote value %d to 0x%04X for option '%s'", value, self._address, option)
             await self.coordinator.async_request_refresh()
         except Exception as err:
-            _LOGGER.error("Failed to write option '%s' → 0x%04X: %s", option, self._address, err)
+            LOGGER.error("Failed to write option '%s' → 0x%04X: %s", option, self._address, err)

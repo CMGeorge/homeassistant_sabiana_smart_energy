@@ -27,6 +27,7 @@ async def async_setup_entry(
     coordinator.register_address(INVERSION_FLAG_ADDRESS)
 
     for addr, reg in DIAGNOSTIC_DEFINITIONS.items():
+        entity_category = reg.get("entity_category", None)
         for bit_num, bit_def in reg.get("bits", {}).items():
             coordinator.register_address(addr)
             sensors.append(
@@ -37,6 +38,7 @@ async def async_setup_entry(
                     key=bit_def["key"],
                     name=bit_def["name"],
                     entry_id=entry.entry_id,
+                    entity_category=entity_category,
                 )
             )
 
@@ -55,6 +57,7 @@ class SabianaBinarySensor(CoordinatorEntity, BinarySensorEntity):
         key: str,
         name: str,
         entry_id: str,
+        entity_category=None,
     ):
         super().__init__(coordinator)
         self._address = address
@@ -63,7 +66,7 @@ class SabianaBinarySensor(CoordinatorEntity, BinarySensorEntity):
         self._attr_name = name
         self._attr_unique_id = f"sabiana_bin_{key}"
         self._attr_device_info = DeviceInfo(**get_device_info(entry_id))
-
+        self._attr_entity_category = entity_category
         _LOGGER.debug(
             "Initialized binary sensor %s (bit %d @ 0x%04X)", name, bit_num, address
         )

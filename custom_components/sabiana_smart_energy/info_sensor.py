@@ -58,7 +58,7 @@ class SabianaFirmwareSensor(SensorEntity):
         self._attr_unique_id = f"sabiana_diag_{reg['key']}"
         self._attr_native_unit_of_measurement = reg.get("unit", "")
         self._attr_device_class = reg.get("device_class")
-        self._attr_entity_category = EntityCategory.DIAGNOSTIC
+        self._attr_entity_category = reg.get("entity_category")
         self._attr_device_info = DeviceInfo(**get_device_info(entry_id))
 
     async def async_added_to_hass(self) -> None:

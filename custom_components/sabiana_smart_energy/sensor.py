@@ -17,6 +17,7 @@ _LOGGER = logging.getLogger(__name__)
 SENSOR_DEFINITIONS = [
     {**reg, "address": addr}
     for addr, reg in SENSOR_DEFINITIONS_NEW.items()
+    if not reg.get("entity_type")=="switch"
 ]
 
 async def async_setup_entry(

@@ -8,9 +8,8 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 
-from .const import DOMAIN, NUMBER_DEFINITIONS, get_device_info
+from .const import DOMAIN, NUMBER_DEFINITIONS, get_device_info, LOGGER
 
-_LOGGER = logging.getLogger(__name__)
 
 class SabianaNumberEntity(CoordinatorEntity, NumberEntity):
     """Number entity representing a writable Modbus register."""
@@ -38,8 +37,19 @@ class SabianaNumberEntity(CoordinatorEntity, NumberEntity):
 
     async def async_set_native_value(self, value: float) -> None:
         raw_value = round(value / self._scale)
-        await self.coordinator.async_write_register(self._address, raw_value)
+        try:
+            await self.coordinator._client.write_register(address = self._address, 
+                                                  value = raw_value,
+                                                  slave=self.coordinator._slave)
+            LOGGER.debug("Wrote value %d to 0x%04X", value, self._address)
+            # Refresh coordinator to update state, not need waiting for next update
+            await self.coordinator.async_request_refresh()
 
+        except Exception as err:
+            LOGGER.error("Failed to write value %s to 0x%04X: %s", value, self._address, err)
+            return
+        
+    
 async def async_setup_entry(
     hass: HomeAssistant,
     entry: ConfigEntry,
