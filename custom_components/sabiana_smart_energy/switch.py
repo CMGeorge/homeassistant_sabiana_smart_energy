@@ -8,7 +8,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import DOMAIN, REGISTER_DEFINITIONS, LOGGER
+from .const import DOMAIN, REGISTER_DEFINITIONS, LOGGER, get_device_info
 
 class SabianaSwitch(CoordinatorEntity, SwitchEntity):
     """Modbus-based switch entity for Sabiana."""
@@ -22,12 +22,7 @@ class SabianaSwitch(CoordinatorEntity, SwitchEntity):
         self._attr_name = props["name"]
         self._attr_unique_id = f"sabiana_switch_{self._key}"
         # self._attr_entity_category = EntityCategory.CONFIG
-        self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, entry_id)},
-            name="Sabiana RVU",
-            manufacturer="Sabiana",
-            model="Smart Pro"
-        )
+        self._attr_device_info = DeviceInfo(**get_device_info(entry_id))
 
     @property
     def is_on(self) -> bool | None:

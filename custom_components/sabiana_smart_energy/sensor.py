@@ -9,9 +9,8 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import DOMAIN, SENSOR_DEFINITIONS_NEW
+from .const import DOMAIN, SENSOR_DEFINITIONS_NEW, LOGGER, get_device_info
 
-_LOGGER = logging.getLogger(__name__)
 
 # Build sensor definitions from the new structure
 SENSOR_DEFINITIONS = [
@@ -30,6 +29,9 @@ async def async_setup_entry(
     sensors = []
     for definition in SENSOR_DEFINITIONS:
         coordinator.register_address(definition["address"])
+        if definition.get("type") == "float32":
+            # For float32, we need to register both high and low addresses
+            coordinator.register_address(definition["address"] + 1)
         sensors.append(
             SabianaModbusSensor(coordinator, definition, entry.entry_id)
         )
@@ -41,9 +43,9 @@ async def async_setup_entry(
     #     )
     # ]
 
-    _LOGGER.debug("Adding %d Sabiana sensors", len(sensors))
+    LOGGER.debug("Adding %d Sabiana sensors", len(sensors))
     for sensor in sensors:
-        _LOGGER.debug("  • %s (address: 0x%04X)", sensor.name, sensor._address)
+        LOGGER.debug("  • %s (address: 0x%04X)", sensor.name, sensor._address)
 
     async_add_entities(sensors)
 
@@ -66,14 +68,11 @@ class SabianaModbusSensor(CoordinatorEntity, SensorEntity):
         self._attr_native_unit_of_measurement = reg.get("unit")
         self._attr_device_class = reg.get("device_class")
         self._attr_unique_id = f"sabiana_sensor_{reg['key']}"
-        self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, entry_id)},
-            name="Sabiana RVU",
-            manufacturer="Sabiana",
-            model="Smart Pro",
-        )
+        self._type = reg.get("type", "uint16")
+        self._attr_device_info = DeviceInfo(**get_device_info(entry_id))
+    
 
-        _LOGGER.debug(
+        LOGGER.debug(
             "Initialized sensor %s (unique_id=%s) at address 0x%04X",
             self.name,
             self.unique_id,
@@ -83,15 +82,51 @@ class SabianaModbusSensor(CoordinatorEntity, SensorEntity):
     @property
     def native_value(self) -> float | None:
         """Return the scaled value from the coordinator’s data and log it."""
+        
+        if self._type == "float32":
+            raw_hi = self.coordinator.data.get(self._address)
+            raw_lo = self.coordinator.data.get(self._address + 1)
+            if raw_hi is None or raw_lo is None:
+                LOGGER.debug(
+                    "No data for %s at addresses 0x%04X/0x%04X", self.name, self._address, self._address + 1
+                )
+                return None
+
+            import struct
+            try:
+                combined_bytes = struct.pack(">HH", raw_hi, raw_lo)
+                value = struct.unpack(">f", combined_bytes)[0]
+            except Exception as e:
+                LOGGER.warning("Failed to decode float32 for %s: %s", self.name, e)
+                return None
+
+            scaled = round(value, self._precision)
+            LOGGER.debug("%s: raw float32=(%s, %s) → %s", self.name, raw_hi, raw_lo, scaled)
+            return scaled
+
+        # default UInt16 logic
         raw = self.coordinator.data.get(self._address)
         if raw is None:
-            _LOGGER.debug(
+            LOGGER.debug(
                 "No data for %s at address 0x%04X", self.name, self._address
             )
             return None
 
         scaled = round(raw * self._scale, self._precision)
-        _LOGGER.debug(
-            "%s: raw=%s → scaled=%s", self.name, raw, scaled
-        )
+        LOGGER.debug("%s: raw=%s → scaled=%s", self.name, raw, scaled)
         return scaled
+    # @property
+    # def native_value(self) -> float | None:
+    #     """Return the scaled value from the coordinator’s data and log it."""
+    #     raw = self.coordinator.data.get(self._address)
+    #     if raw is None:
+    #         LOGGER.debug(
+    #             "No data for %s at address 0x%04X", self.name, self._address
+    #         )
+    #         return None
+
+    #     scaled = round(raw * self._scale, self._precision)
+    #     LOGGER.debug(
+    #         "%s: raw=%s → scaled=%s", self.name, raw, scaled
+    #     )
+    #     return scaled
