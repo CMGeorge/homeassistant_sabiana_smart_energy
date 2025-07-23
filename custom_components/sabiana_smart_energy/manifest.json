@@ -1,7 +1,7 @@
 {
     "domain": "sabiana_energy_smart",
     "name": "Sabiana Energy Smart",
-    "version": "1.0.5",
+    "version": "1.0.0",
     "config_flow": true,
     "documentation": "https://github.com/CMGeorge/homeassistant_sabiana_smart_energy/blob/main/README.md",
     "issue_tracker": "https://github.com/CMGeorge/homeassistant_sabiana_smart_energy/issues",
