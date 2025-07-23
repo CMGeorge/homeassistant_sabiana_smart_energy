@@ -464,20 +464,7 @@ REGISTER_DEFINITIONS = {
         "readable": True,
         "writable": True,
     },
-    0x0212: {
-        "key": "manual_speed_level",
-        "name": "Manual Speed Level",
-        "type": "uns16",
-        "dataLength": 1,
-        "readable": True,
-        "writable": True,
-        "options": {
-            0: "Speed 1",
-            1: "Speed 2",
-            2: "Speed 3",
-            3: "Speed 4"
-        }
-    },
+    
     0x0213: {
         "key": "speed_1_pct",
         "name": "1st speed %",
@@ -726,9 +713,11 @@ REGISTER_DEFINITIONS = {
         "name": "RH Low value",
         "unit": "%",
         "scale": 0.1,
-        "precision": 0,
-        "min": 200,
-        "max": 300,
+        "precision": 1,
+        # "min": 200,
+        # "max": 300,
+        "min": 20,
+        "max": 30,
         "readable": True,
         "writable": True,
     },
@@ -737,9 +726,11 @@ REGISTER_DEFINITIONS = {
         "name": "RH Standard value",
         "unit": "%",
         "scale": 0.1,
-        "precision": 0,
-        "min": 400,
-        "max": 600,
+        "precision": 1,
+        # "min": 400,
+        # "max": 600,
+        "min": 40,
+        "max": 60,
         "readable": True,
         "writable": True,
     },
@@ -748,22 +739,15 @@ REGISTER_DEFINITIONS = {
         "name": "RH Hi value",
         "unit": "%",
         "scale": 0.1,
-        "precision": 0,
-        "min": 600,
-        "max": 800,
+        "precision": 2,
+        # "min": 600,
+        # "max": 800,
+        "min": 60,
+        "max": 80,
         "readable": True,
         "writable": True,
     },
-
-    0x0300: {
-        "key": "CMD_OnOff",
-        "name": "Power On/Off",
-        "unit": "",
-        "device_class": "power",
-        "readable": True,
-        "writable": True,
-        "entity_type": "switch",
-    },
+    
 
 
     # 0x0210: {
@@ -778,6 +762,101 @@ REGISTER_DEFINITIONS = {
     #     "writable": True,
     # },
 
+    
+}
+
+SWITCH_DEFINITIONS = {
+    0x0300: {
+        "key": "CMD_OnOff",
+        "name": "Power On/Off",
+        "unit": "",
+        "device_class": "power",
+        "readable": True,
+        "writable": True,
+        "entity_type": "switch",
+    },
+}
+BUTTON_DEFINITIONS = {
+    0x0301: {
+        "key": "CMD_Manual",
+        "name": "Manual mode",
+        "unit": "",
+        "device_class": "power",
+        "readable": True,
+        "writable": True,
+        "entity_type": "button",
+    },
+    0x0302: {
+        "key": "CMD_Holiday",
+        "name": "Holiday mode",
+        "unit": "",
+        "device_class": "power",
+        "readable": True,
+        "writable": True,
+        "entity_type": "button",
+    },
+    0x0303: {
+        "key": "CMD_Party",
+        "name": "Party mode",
+        "unit": "",
+        "device_class": "power",
+        "readable": True,
+        "writable": True,
+        "entity_type": "button",
+    },
+    0x0304: {
+        "key": "CMD_Auto",
+        "name": "Auto mode",
+        "unit": "",
+        "device_class": "power",
+        "readable": True,
+        "writable": True,
+        "entity_type": "button",
+    },
+    0x0305: {
+        "key": "CMD_Program",
+        "name": "Program mode",
+        "unit": "",
+        "device_class": "power",
+        "readable": True,
+        "writable": True,
+        "entity_type": "button",
+    },
+}
+# Number definitions, generated from REGISTER_DEFINITIONS
+NUMBER_DEFINITIONS = [
+    {
+        "address": addr,
+        "key": reg["key"],
+        "name": reg["name"],
+        "min": reg.get("min",0),
+        "max": reg.get("max",0),
+        "unit": reg.get("unit",""),
+        "scale": reg.get("scale", 1),
+        "precision": reg.get("precision", 0),
+        "unique_id": f"sabiana_number_{reg['key']}",
+    }
+    for addr, reg in REGISTER_DEFINITIONS.items()
+    if reg.get("writable") 
+
+]
+
+# Example for select definitions (fill as needed)
+SELECT_DEFINITIONS = {
+    0x0212: {
+        "key": "manual_speed_level",
+        "name": "Manual Speed Level",
+        "type": "uns16",
+        "dataLength": 1,
+        "readable": True,
+        "writable": True,
+        "options": {
+            0: "Speed 1",
+            1: "Speed 2",
+            2: "Speed 3",
+            3: "Speed 4"
+        }
+    },
     0x0306: {
         "key": "timer_program",
         "name": "Timer Program",
@@ -812,35 +891,6 @@ REGISTER_DEFINITIONS = {
         }
     },
 }
-
-# Number definitions, generated from REGISTER_DEFINITIONS
-NUMBER_DEFINITIONS = [
-    {
-        "address": addr,
-        "key": reg["key"],
-        "name": reg["name"],
-        "min": reg.get("min",0),
-        "max": reg.get("max",0),
-        "unit": reg.get("unit",""),
-        "scale": reg.get("scale", 1),
-        "precision": reg.get("precision", 0),
-        "unique_id": f"sabiana_number_{reg['key']}",
-    }
-    for addr, reg in REGISTER_DEFINITIONS.items()
-    if reg.get("writable") and not reg.get("options")
-
-]
-
-# Example for select definitions (fill as needed)
-SELECT_DEFINITIONS = [
-    # {
-    #     "address": 0x0300,
-    #     "name": "Operation Mode",
-    #     "options": ["Auto", "Manual", "Off"],
-    #     "option_map": {0: "Auto", 1: "Manual", 2: "Off"},
-    #     "unique_id": "sabiana_select_operation_mode",
-    # },
-]
 
 # Diagnostic definitions (for binary_sensor.py)
 DIAGNOSTIC_DEFINITIONS = {

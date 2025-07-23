@@ -9,7 +9,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.helpers.entity import DeviceInfo
 
-from .const import DOMAIN, REGISTER_DEFINITIONS, LOGGER, get_device_info
+from .const import DOMAIN, SELECT_DEFINITIONS, LOGGER, get_device_info
 
 async def async_setup_entry(
     hass: HomeAssistant,
@@ -19,8 +19,8 @@ async def async_setup_entry(
     coordinator = hass.data[DOMAIN][entry.entry_id]
     selects = []
 
-    for addr, reg in REGISTER_DEFINITIONS.items():
-        if reg.get("options") and reg.get("writable") and not reg.get("entity_type") == "switch":
+    for addr, reg in SELECT_DEFINITIONS.items():
+        if reg.get("options") and reg.get("writable") and (not reg.get("entity_type") == "switch" and not reg.get("entity_type") == "button"):
             coordinator.register_address(addr)
             selects.append(
                 SabianaModbusSelect(

@@ -16,7 +16,7 @@ from .const import DOMAIN, SENSOR_DEFINITIONS_NEW, LOGGER, get_device_info
 SENSOR_DEFINITIONS = [
     {**reg, "address": addr}
     for addr, reg in SENSOR_DEFINITIONS_NEW.items()
-    if not reg.get("entity_type")=="switch"
+    if not reg.get("entity_type")=="switch" and not reg.get("entity_type")=="button"
 ]
 
 async def async_setup_entry(

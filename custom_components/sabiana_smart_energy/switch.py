@@ -2,13 +2,15 @@ from __future__ import annotations
 import logging
 
 from homeassistant.components.switch import SwitchEntity
+from homeassistant.components.button import ButtonEntity
+
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.helpers.entity import DeviceInfo, EntityCategory
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import DOMAIN, REGISTER_DEFINITIONS, LOGGER, get_device_info
+from .const import DOMAIN, SWITCH_DEFINITIONS, LOGGER, get_device_info
 
 class SabianaSwitch(CoordinatorEntity, SwitchEntity):
     """Modbus-based switch entity for Sabiana."""
@@ -67,7 +69,7 @@ async def async_setup_entry(
     coordinator = hass.data[DOMAIN][entry.entry_id]
     switches = []
 
-    for address, props in REGISTER_DEFINITIONS.items():
+    for address, props in SWITCH_DEFINITIONS.items():
         if props.get("entity_type") == "switch":
             coordinator.register_address(address)
             switches.append(
