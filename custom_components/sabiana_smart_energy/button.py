@@ -1,16 +1,14 @@
 from __future__ import annotations
-import logging
 
-from homeassistant.components.switch import SwitchEntity
 from homeassistant.components.button import ButtonEntity
-
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
-from homeassistant.helpers.entity import DeviceInfo, EntityCategory
+from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import DOMAIN, BUTTON_DEFINITIONS, LOGGER, get_device_info
+
 
 class SabianaButton(CoordinatorEntity, ButtonEntity):
     """Modbus-based button entity for Sabiana."""
@@ -25,21 +23,17 @@ class SabianaButton(CoordinatorEntity, ButtonEntity):
 
     async def async_press(self) -> None:
         try:
-            # Write '1' to the register on button press
-            await self.coordinator._client.write_register(
-                address=self._address,
-                value=1,
-                slave=self.coordinator._slave
-            )
-            LOGGER.debug("Button pressed: wrote value 1 to 0x%04X", self._address)
-            # Refresh data from coordinator after write
-            await self.coordinator.async_request_refresh()
+            ok = await self.coordinator.async_write_register(self._address, 1)
+            if ok:
+                LOGGER.debug("Button pressed: wrote value 1 to 0x%04X", self._address)
         except Exception as err:
-            LOGGER.error("Failed to press button %s at 0x%04X: %s", self.name, self._address, err)
+            LOGGER.error(
+                "Failed to press button %s at 0x%04X: %s", self.name, self._address, err
+            )
+
+
 async def async_setup_entry(
-    hass: HomeAssistant,
-    entry: ConfigEntry,
-    async_add_entities: AddEntitiesCallback
+    hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
 ):
     coordinator = hass.data[DOMAIN][entry.entry_id]
     buttons = []

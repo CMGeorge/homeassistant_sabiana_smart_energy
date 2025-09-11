@@ -38,25 +38,17 @@ class SabianaSwitch(CoordinatorEntity, SwitchEntity):
 
     async def async_turn_on(self, **kwargs):
         try:
-            await self.coordinator._client.write_register(
-                address=self._address,
-                value=1,
-                slave=self.coordinator._slave
-            )
-            LOGGER.debug("Wrote value 1 to 0x%04X", self._address)
-            await self.coordinator.async_request_refresh()
+            ok = await self.coordinator.async_write_register(self._address, 1)
+            if ok:
+                LOGGER.debug("Wrote value 1 to 0x%04X", self._address)
         except Exception as err:
             LOGGER.error("Failed to turn ON %s at 0x%04X: %s", self.name, self._address, err)
 
     async def async_turn_off(self, **kwargs):
         try:
-            await self.coordinator._client.write_register(
-                address=self._address,
-                value=0,
-                slave=self.coordinator._slave
-            )
-            LOGGER.debug("Wrote value 0 to 0x%04X", self._address)
-            await self.coordinator.async_request_refresh()
+            ok = await self.coordinator.async_write_register(self._address, 0)
+            if ok:
+                LOGGER.debug("Wrote value 0 to 0x%04X", self._address)
         except Exception as err:
             LOGGER.error("Failed to turn OFF %s at 0x%04X: %s", self.name, self._address, err)
 

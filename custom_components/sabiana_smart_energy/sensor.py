@@ -70,7 +70,6 @@ class SabianaModbusSensor(CoordinatorEntity, SensorEntity):
         self._attr_unique_id = f"sabiana_sensor_{reg['key']}"
         self._type = reg.get("type", "uint16")
         self._attr_device_info = DeviceInfo(**get_device_info(entry_id))
-    
 
         LOGGER.debug(
             "Initialized sensor %s (unique_id=%s) at address 0x%04X",
@@ -82,7 +81,7 @@ class SabianaModbusSensor(CoordinatorEntity, SensorEntity):
     @property
     def native_value(self) -> float | None:
         """Return the scaled value from the coordinator’s data and log it."""
-        
+
         if self._type == "float32":
             raw_hi = self.coordinator.data.get(self._address)
             raw_lo = self.coordinator.data.get(self._address + 1)
