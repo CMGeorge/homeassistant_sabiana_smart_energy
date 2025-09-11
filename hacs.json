@@ -1,5 +1,5 @@
 {
-    "name": "Sabiana Smart Energy",
+    "name": "Sabiana Energy Smart",
     "hacs": "1.0.1",
     "homeassistant": "2025.9.1",
     "domains": ["sensor", "binary_sensor", "switch", "button", "number", "select"]
