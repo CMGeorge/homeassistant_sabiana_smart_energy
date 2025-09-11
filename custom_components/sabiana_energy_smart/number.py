@@ -1,5 +1,4 @@
 from __future__ import annotations
-import logging
 
 from homeassistant.components.number import NumberEntity
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
@@ -38,29 +37,27 @@ class SabianaNumberEntity(CoordinatorEntity, NumberEntity):
     async def async_set_native_value(self, value: float) -> None:
         raw_value = round(value / self._scale)
         try:
-            await self.coordinator._client.write_register(address = self._address, 
-                                                  value = raw_value,
-                                                  slave=self.coordinator._slave)
-            LOGGER.debug("Wrote value %d to 0x%04X", value, self._address)
-            # Refresh coordinator to update state, not need waiting for next update
-            await self.coordinator.async_request_refresh()
-
+            ok = await self.coordinator.async_write_register(self._address, raw_value)
+            if ok:
+                LOGGER.debug(
+                    "Wrote value %s (raw %d) to 0x%04X", value, raw_value, self._address
+                )
         except Exception as err:
-            LOGGER.error("Failed to write value %s to 0x%04X: %s", value, self._address, err)
-            return
-        
-    
+            LOGGER.error(
+                "Failed to write value %s to 0x%04X: %s", value, self._address, err
+            )
+
+
 async def async_setup_entry(
     hass: HomeAssistant,
     entry: ConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     coordinator = hass.data[DOMAIN][entry.entry_id]
-    entities = []
-        
+    entities: list[SabianaNumberEntity] = []
+
     for reg in NUMBER_DEFINITIONS:
         coordinator.register_address(reg["address"])
-        entities.append(
-            SabianaNumberEntity(coordinator, reg, entry.entry_id)
-        )
+        entities.append(SabianaNumberEntity(coordinator, reg, entry.entry_id))
+
     async_add_entities(entities)

@@ -981,7 +981,7 @@ DIAGNOSTIC_DEFINITIONS = {
             15: {"key": "ALM_PreFrost_T2", "name": "Pre frost alarm (T2)"},
         }
     },
-    0x0111: {
+    0x011F: {
         "type": "uint16",
         "entity_category": EntityCategory.DIAGNOSTIC,
         "bits": {
@@ -996,7 +996,7 @@ DIAGNOSTIC_DEFINITIONS = {
         }
     },
     #is read write but maybe we should not touch it.
-    0x0111: {
+    0x0200: {
         "type": "sig16",
         "entity_category": EntityCategory.DIAGNOSTIC,
         "bits": {

@@ -2,8 +2,8 @@ from __future__ import annotations
 import voluptuous as vol
 from homeassistant import config_entries
 from homeassistant.data_entry_flow import FlowResult
-from homeassistant.const import CONF_HOST, CONF_PORT, CONF_NAME, CONF_SLAVE
-from .const import DOMAIN
+from homeassistant.const import CONF_HOST, CONF_PORT, CONF_NAME
+from .const import DOMAIN, CONF_SLAVE
 
 class MyModbusDeviceConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """Handle a config flow for My Modbus Device."""

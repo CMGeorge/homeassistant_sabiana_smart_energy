@@ -9,12 +9,10 @@ from homeassistant.const import (
 )
 
 from .modbus_coordinator import SabianaModbusCoordinator
-from .const import LOGGER
+from .const import LOGGER, DOMAIN
 # from .info_sensor import SabianaInfoCoordinator
 
 # _LOGGER = logging.getLogger(__name__)
-
-DOMAIN = "sabiana_energy_smart"
 
 PLATFORMS: list[Platform] = [
     Platform.BINARY_SENSOR,
@@ -54,4 +52,6 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload a config entry."""
     coordinator = hass.data[DOMAIN].pop(entry.entry_id)
     unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
+    # Ensure Modbus client is closed
+    await coordinator.async_close()
     return unload_ok
