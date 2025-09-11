@@ -42,7 +42,7 @@ class SabianaModbusClient:
 
         try:
             result = await self.client.read_holding_registers(
-                address=address, count=count, slave=slave
+                address=address, count=count, device_id=slave
             )
             if result is None or result.isError():
                 _LOGGER.warning("Read failed at address 0x%04X", address)
@@ -64,7 +64,7 @@ class SabianaModbusClient:
 
         try:
             result = await self.client.write_register(
-                address=address, value=value, slave=slave
+                address=address, value=value, device_id=slave
             )
             if result.isError():
                 _LOGGER.warning("Write failed at 0x%04X: %s", address, result)
