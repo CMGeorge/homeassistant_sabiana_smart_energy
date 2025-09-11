@@ -47,15 +47,19 @@ class SabianaModbusSelect(CoordinatorEntity, SelectEntity):
     ):
         super().__init__(coordinator)
         self._address = address
-        self._options_map: dict[int, str] = reg["options"]
-        self._reverse_map: dict[str, int] = {v: k for k, v in self._options_map.items()}
+        self._options_map = reg["options"]
+        self._reverse_map = {v: k for k, v in self._options_map.items()}
 
         self._attr_name = reg["name"]
         self._attr_unique_id = f"sabiana_select_{reg['key']}"
         self._attr_options = list(self._reverse_map.keys())
         self._attr_device_info = DeviceInfo(**get_device_info(entry_id))
 
-        LOGGER.debug("Initialized select '%s' with options: %s", self.name, self._attr_options)
+        LOGGER.debug(
+            "Initialized select '%s' with options: %s",
+            self.name,
+            self._attr_options,
+        )
 
     @property
     def current_option(self) -> str | None:
@@ -76,12 +80,8 @@ class SabianaModbusSelect(CoordinatorEntity, SelectEntity):
 
         value = self._reverse_map[option]
         try:
-            await self.coordinator._client.write_register(
-                address=self._address,
-                value=value,
-                slave=self.coordinator._slave
-            )
-            LOGGER.debug("Wrote value %d to 0x%04X for option '%s'", value, self._address, option)
-            await self.coordinator.async_request_refresh()
+            ok = await self.coordinator.async_write_register(self._address, value)
+            if ok:
+                LOGGER.debug("Wrote value %d to 0x%04X for option '%s'", value, self._address, option)
         except Exception as err:
             LOGGER.error("Failed to write option '%s' → 0x%04X: %s", option, self._address, err)
