@@ -9,4 +9,4 @@ homeassistant:
 logger:
   default: info
   logs:
-    custom_components.sabiana_smart_energy: debug
+    custom_components.sabiana_energy_smart: debug
