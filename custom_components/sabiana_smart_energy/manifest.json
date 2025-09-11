@@ -1,5 +1,5 @@
 {
-    "domain": "sabiana_smart_energy",
+    "domain": "sabiana_energy_smart",
     "name": "Sabiana Energy Smart",
     "version": "1.0.0",
     "config_flow": true,
