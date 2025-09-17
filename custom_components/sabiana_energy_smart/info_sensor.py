@@ -7,7 +7,6 @@ from homeassistant.core import HomeAssistant
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from homeassistant.helpers.entity import EntityCategory
 
 from .const import DOMAIN, FIRMWARE_INFO, get_device_info
 from .helpers import decode_modbus_value
@@ -19,6 +18,7 @@ SENSOR_DEFINITIONS = [
     for addr, reg in FIRMWARE_INFO.items()
     if reg.get("readable")
 ]
+
 
 async def async_setup_entry(
     hass: HomeAssistant,
@@ -67,7 +67,7 @@ class SabianaFirmwareSensor(SensorEntity):
             result = await self._client.read_register(
                 address=self._address,
                 count=self._length,
-                slave=1  # or from config if needed
+                slave=1,  # or from config if needed
             )
             self._raw_value = result if isinstance(result, list) else [result]
             _LOGGER.debug(

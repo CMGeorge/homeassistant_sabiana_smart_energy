@@ -108,7 +108,7 @@ SENSOR_DEFINITIONS_NEW = {
         "unit": "%",
         "readable": True,
     },
-    0x0111:{
+    0x0111: {
         "key": "PressDiffSensor1",
         "name": "Diff. Pressure Sensor 1",
         "unit": "Pa",
@@ -117,7 +117,7 @@ SENSOR_DEFINITIONS_NEW = {
         # "device_class": "carbon_dioxide",
         "readable": True,
     },
-    0x0112:{
+    0x0112: {
         "key": "PressDiffSensor2",
         "name": "Diff. Pressure Sensor 2",
         "unit": "Pa",
@@ -193,7 +193,6 @@ SENSOR_DEFINITIONS_NEW = {
         "precision": 0,
         "readable": True,
     },
-
 }
 
 
@@ -254,7 +253,7 @@ REGISTER_DEFINITIONS = {
     #     "writable": False,
     # },
     # ... (your original register definitions, as provided above)
-    #Should be implemented but don't recomand to be used... Maybe should use only the read method bit for diagnose?
+    # Should be implemented but don't recomand to be used... Maybe should use only the read method bit for diagnose?
     # 0x0200: {
     #     "key": "speed_1_pct",
     #     "name": "1st speed %",
@@ -423,7 +422,6 @@ REGISTER_DEFINITIONS = {
         "readable": True,
         "writable": True,
     },
-
     0x020E: {
         "key": "KCoeff1",
         "name": "K coefficient 1",
@@ -464,7 +462,6 @@ REGISTER_DEFINITIONS = {
         "readable": True,
         "writable": True,
     },
-    
     0x0213: {
         "key": "speed_1_pct",
         "name": "1st speed %",
@@ -536,7 +533,7 @@ REGISTER_DEFINITIONS = {
         "max": 30,
         "readable": True,
         "writable": True,
-        #TODO: Should be multiplid with the scale factor, which is 0.1?
+        # TODO: Should be multiplid with the scale factor, which is 0.1?
     },
     0x0219: {
         "key": "temp_winter_set",
@@ -684,9 +681,8 @@ REGISTER_DEFINITIONS = {
         "readable": True,
         "writable": True,
     },
-    #TODO: Bit Mod for 0x226
-
-    #Its a range... how is this set up? TODO: See and fix.
+    # TODO: Bit Mod for 0x226
+    # Its a range... how is this set up? TODO: See and fix.
     0x0227: {
         "key": "CO2SensorRange",
         "name": "CO2 Sensor PPM Range",
@@ -747,9 +743,6 @@ REGISTER_DEFINITIONS = {
         "readable": True,
         "writable": True,
     },
-    
-
-
     # 0x0210: {
     #     "key": "",
     #     "name": "",
@@ -761,8 +754,6 @@ REGISTER_DEFINITIONS = {
     #     "readable": True,
     #     "writable": True,
     # },
-
-    
 }
 
 SWITCH_DEFINITIONS = {
@@ -829,16 +820,15 @@ NUMBER_DEFINITIONS = [
         "address": addr,
         "key": reg["key"],
         "name": reg["name"],
-        "min": reg.get("min",0),
-        "max": reg.get("max",0),
-        "unit": reg.get("unit",""),
+        "min": reg.get("min", 0),
+        "max": reg.get("max", 0),
+        "unit": reg.get("unit", ""),
         "scale": reg.get("scale", 1),
         "precision": reg.get("precision", 0),
         "unique_id": f"sabiana_number_{reg['key']}",
     }
     for addr, reg in REGISTER_DEFINITIONS.items()
-    if reg.get("writable") 
-
+    if reg.get("writable")
 ]
 
 # Example for select definitions (fill as needed)
@@ -850,12 +840,7 @@ SELECT_DEFINITIONS = {
         "dataLength": 1,
         "readable": True,
         "writable": True,
-        "options": {
-            0: "Speed 1",
-            1: "Speed 2",
-            2: "Speed 3",
-            3: "Speed 4"
-        }
+        "options": {0: "Speed 1", 1: "Speed 2", 2: "Speed 3", 3: "Speed 4"},
     },
     0x0306: {
         "key": "timer_program",
@@ -872,8 +857,8 @@ SELECT_DEFINITIONS = {
             5: "Program 5 (Manual)",
             6: "Program 6 (Manual)",
             7: "Program 7 (Manual)",
-            8: "Program 8 (Manual)"
-        }
+            8: "Program 8 (Manual)",
+        },
     },
     0x0307: {
         "key": "mode_selection",
@@ -882,13 +867,7 @@ SELECT_DEFINITIONS = {
         "dataLength": 1,
         "readable": True,
         "writable": True,
-        "options": {
-            0: "Holiday",
-            1: "Auto",
-            2: "Program",
-            3: "Manual",
-            4: "Party"
-        }
+        "options": {0: "Holiday", 1: "Auto", 2: "Program", 3: "Manual", 4: "Party"},
     },
 }
 
@@ -910,11 +889,11 @@ DIAGNOSTIC_DEFINITIONS = {
             8: {"key": "cfg_post_ext_he", "name": "Post Treatment Ext. HE"},
             9: {"key": "cfg_uart_highspd", "name": "UART High Speed"},
             10: {"key": "cfg_post_treatment_T3/T2", "name": "Post treatment T3/T2"},
-        }
+        },
     },
     0x0105: {
         "type": "uint16",
-        "entity_category": None, 
+        "entity_category": None,
         # "entity_category": EntityCategory.CONFIG,
         "bits": {
             0: {"key": "remote_off", "name": "Remote OFF Active"},
@@ -926,39 +905,39 @@ DIAGNOSTIC_DEFINITIONS = {
             7: {"key": "party_mode_active", "name": "Party Mode Active"},
             8: {"key": "on_status", "name": "Unit ON"},
             11: {"key": "winter_setting", "name": "Winter Setting"},
-        }
+        },
     },
     0x0108: {
         "type": "uint16",
         # "entity_category": EntityCategory.CONFIG,
-        "entity_category": None, 
+        "entity_category": None,
         "bits": {
             2: {"key": "OUT_Damper_CW", "name": "Damper CW output"},
             3: {"key": "OUT_Damper_CCW", "name": "Damper CCW output"},
-        }
+        },
     },
     0x0109: {
         "type": "uint8",
         # "entity_category": EntityCategory.CONFIG,
-        "entity_category": None, 
+        "entity_category": None,
         "bits": {
             0: {"key": "relay_iaq_fault", "name": "IAQ Fault Relay ON"},
             1: {"key": "relay_preheat", "name": "Preheat Relay ON"},
             2: {"key": "relay_postheat", "name": "Postheat Relay ON"},
             3: {"key": "relay_fans", "name": "Fans Relay ON"},
             4: {"key": "relay_postcool", "name": "Postcool/Heat2 Relay ON"},
-        }
+        },
     },
     0x010A: {
         "type": "uint8",
         # "entity_category": EntityCategory.CONFIG,
-        "entity_category": None, 
+        "entity_category": None,
         "bits": {
             1: {"key": "DIN_C1", "name": "Input C1 status"},
             2: {"key": "DIN_C2", "name": "Input C2 status"},
             3: {"key": "DIN_C3", "name": "Input C3 status"},
             4: {"key": "DIN_C4", "name": "Input C4 status"},
-        }
+        },
     },
     0x0110: {
         "type": "uint16",
@@ -979,7 +958,7 @@ DIAGNOSTIC_DEFINITIONS = {
             12: {"key": "ALM_FanThermalInput", "name": "Fan thermic input alarm"},
             14: {"key": "ALM_PreHeating", "name": "Pre Heating alarm"},
             15: {"key": "ALM_PreFrost_T2", "name": "Pre frost alarm (T2)"},
-        }
+        },
     },
     0x011F: {
         "type": "uint16",
@@ -990,19 +969,22 @@ DIAGNOSTIC_DEFINITIONS = {
             10: {"key": "OPT_HE", "name": "HE used"},
             11: {"key": "OPT_BoilerBoost", "name": "Boiler boost mode used"},
             12: {"key": "OPT_CO2Sensor", "name": "CO2 sensor present"},
-            13: {"key": "OPT_DiffPressSensor", "name": "Differential pressure sensor present"},
+            13: {
+                "key": "OPT_DiffPressSensor",
+                "name": "Differential pressure sensor present",
+            },
             14: {"key": "OPT_RHSensor", "name": "RH sensor present"},
             15: {"key": "OPT_ReverseMount", "name": "Reverse mounting"},
-        }
+        },
     },
-    #is read write but maybe we should not touch it.
+    # is read write but maybe we should not touch it.
     0x0200: {
         "type": "sig16",
         "entity_category": EntityCategory.DIAGNOSTIC,
         "bits": {
             1: {"key": "S_PRM_StopFanOn", "name": "Stop Mode Fan status"},
             2: {"key": "S_PRM_FlushFanOn", "name": "Flush Fan status"},
-        }
+        },
     },
 }
 
@@ -1063,10 +1045,12 @@ FIRMWARE_INFO = {
         "writable": False,
     },
 }
+
+
 def get_device_info(entry_id: str):
     return {
         "identifiers": {(DOMAIN, entry_id)},
         "name": "Sabiana RVU",
         "manufacturer": "Sabiana",
-        "model": "Smart Pro"
+        "model": "Smart Pro",
     }
