@@ -16,7 +16,7 @@ jobs:
       - name: Get next version
         id: version
         run: |
-            echo "version=$(jq .version -r ./custom_components/healthchecksio/manifest.json)" >> $GITHUB_OUTPUT
+            echo "version=$(jq .version -r ./custom_components/homeassistant_sabiana_smart_energy/manifest.json)" >> $GITHUB_OUTPUT
 
       - name: Run Release Drafter
         uses: release-drafter/release-drafter@v6.1.0
