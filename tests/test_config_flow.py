@@ -14,10 +14,10 @@ def test_config_flow_file_syntax():
         "..",
         "custom_components",
         "sabiana_energy_smart",
-        "config_flow.py"
+        "config_flow.py",
     )
 
-    with open(config_flow_path, encoding='utf-8') as f:
+    with open(config_flow_path, encoding="utf-8") as f:
         content = f.read()
 
     try:
@@ -33,10 +33,10 @@ def test_config_flow_class_defined():
         "..",
         "custom_components",
         "sabiana_energy_smart",
-        "config_flow.py"
+        "config_flow.py",
     )
 
-    with open(config_flow_path, encoding='utf-8') as f:
+    with open(config_flow_path, encoding="utf-8") as f:
         content = f.read()
 
     assert "class MyModbusDeviceConfigFlow" in content
@@ -48,12 +48,14 @@ def test_config_schema_validation():
     # Test basic voluptuous validation patterns similar to config flow
 
     # Simple schema similar to what's used in the config flow
-    test_schema = vol.Schema({
-        vol.Required("name", default="Sabiana HRV"): str,
-        vol.Required("host"): str,
-        vol.Required("port", default=502): int,
-        vol.Required("slave", default=1): int,
-    })
+    test_schema = vol.Schema(
+        {
+            vol.Required("name", default="Sabiana HRV"): str,
+            vol.Required("host"): str,
+            vol.Required("port", default=502): int,
+            vol.Required("slave", default=1): int,
+        }
+    )
 
     # Test valid input
     valid_data = {
@@ -71,21 +73,25 @@ def test_config_schema_validation():
 
     # Test invalid input - missing required field
     with pytest.raises(vol.MultipleInvalid):
-        test_schema({
-            "name": "Test",
-            # Missing host
-            "port": 502,
-            "slave": 1,
-        })
+        test_schema(
+            {
+                "name": "Test",
+                # Missing host
+                "port": 502,
+                "slave": 1,
+            }
+        )
 
     # Test invalid input - wrong type
     with pytest.raises(vol.Invalid):
-        test_schema({
-            "name": "Test",
-            "host": "192.168.1.100",
-            "port": "not_a_number",  # Should be int
-            "slave": 1,
-        })
+        test_schema(
+            {
+                "name": "Test",
+                "host": "192.168.1.100",
+                "port": "not_a_number",  # Should be int
+                "slave": 1,
+            }
+        )
 
 
 def test_config_flow_imports():
@@ -95,10 +101,10 @@ def test_config_flow_imports():
         "..",
         "custom_components",
         "sabiana_energy_smart",
-        "config_flow.py"
+        "config_flow.py",
     )
 
-    with open(config_flow_path, encoding='utf-8') as f:
+    with open(config_flow_path, encoding="utf-8") as f:
         content = f.read()
 
     # Check for key imports

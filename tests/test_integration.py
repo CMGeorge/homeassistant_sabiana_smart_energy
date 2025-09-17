@@ -7,10 +7,7 @@ import os
 def test_all_python_files_syntax():
     """Test that all Python files have valid syntax."""
     custom_components_dir = os.path.join(
-        os.path.dirname(__file__),
-        "..",
-        "custom_components",
-        "sabiana_energy_smart"
+        os.path.dirname(__file__), "..", "custom_components", "sabiana_energy_smart"
     )
 
     python_files = []
@@ -22,7 +19,7 @@ def test_all_python_files_syntax():
     assert len(python_files) > 0, "No Python files found"
 
     for filepath in python_files:
-        with open(filepath, encoding='utf-8') as f:
+        with open(filepath, encoding="utf-8") as f:
             content = f.read()
 
         try:
@@ -34,10 +31,7 @@ def test_all_python_files_syntax():
 def test_all_python_files_importable_syntax():
     """Test that all Python files have importable syntax structure."""
     custom_components_dir = os.path.join(
-        os.path.dirname(__file__),
-        "..",
-        "custom_components",
-        "sabiana_energy_smart"
+        os.path.dirname(__file__), "..", "custom_components", "sabiana_energy_smart"
     )
 
     python_files = []
@@ -48,7 +42,7 @@ def test_all_python_files_importable_syntax():
 
     for filepath in python_files:
         # Just check that we can parse the AST without errors
-        with open(filepath, encoding='utf-8') as f:
+        with open(filepath, encoding="utf-8") as f:
             content = f.read()
 
         try:
@@ -62,10 +56,7 @@ def test_all_python_files_importable_syntax():
 def test_required_files_exist():
     """Test that required integration files exist."""
     base_dir = os.path.join(
-        os.path.dirname(__file__),
-        "..",
-        "custom_components",
-        "sabiana_energy_smart"
+        os.path.dirname(__file__), "..", "custom_components", "sabiana_energy_smart"
     )
 
     required_files = [
@@ -91,10 +82,7 @@ def test_required_files_exist():
 def test_python_files_have_docstrings():
     """Test that Python files have module docstrings."""
     custom_components_dir = os.path.join(
-        os.path.dirname(__file__),
-        "..",
-        "custom_components",
-        "sabiana_energy_smart"
+        os.path.dirname(__file__), "..", "custom_components", "sabiana_energy_smart"
     )
 
     python_files = []
@@ -104,7 +92,7 @@ def test_python_files_have_docstrings():
                 python_files.append(os.path.join(root, file))
 
     for filepath in python_files:
-        with open(filepath, encoding='utf-8') as f:
+        with open(filepath, encoding="utf-8") as f:
             content = f.read()
 
         tree = ast.parse(content, filepath)
@@ -123,10 +111,7 @@ def test_python_files_have_docstrings():
 def test_no_obvious_syntax_issues():
     """Test for common syntax issues across all files."""
     custom_components_dir = os.path.join(
-        os.path.dirname(__file__),
-        "..",
-        "custom_components",
-        "sabiana_energy_smart"
+        os.path.dirname(__file__), "..", "custom_components", "sabiana_energy_smart"
     )
 
     python_files = []
@@ -136,14 +121,14 @@ def test_no_obvious_syntax_issues():
                 python_files.append(os.path.join(root, file))
 
     for filepath in python_files:
-        with open(filepath, encoding='utf-8') as f:
+        with open(filepath, encoding="utf-8") as f:
             content = f.read()
 
         # Check for common issues
-        lines = content.split('\n')
+        lines = content.split("\n")
         for i, line in enumerate(lines, 1):
             # Check for tabs (should use spaces)
-            if '\t' in line:
+            if "\t" in line:
                 raise AssertionError(f"Tab character found in {filepath}:{i}")
 
             # Check for trailing whitespace (not critical but good practice)

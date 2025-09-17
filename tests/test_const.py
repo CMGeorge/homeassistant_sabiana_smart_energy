@@ -11,10 +11,10 @@ def test_const_file_syntax():
         "..",
         "custom_components",
         "sabiana_energy_smart",
-        "const.py"
+        "const.py",
     )
 
-    with open(const_path, encoding='utf-8') as f:
+    with open(const_path, encoding="utf-8") as f:
         content = f.read()
 
     try:
@@ -30,10 +30,10 @@ def test_const_has_required_definitions():
         "..",
         "custom_components",
         "sabiana_energy_smart",
-        "const.py"
+        "const.py",
     )
 
-    with open(const_path, encoding='utf-8') as f:
+    with open(const_path, encoding="utf-8") as f:
         content = f.read()
 
     # Check that required definition dictionaries are present
@@ -57,10 +57,10 @@ def test_const_domain_definition():
         "..",
         "custom_components",
         "sabiana_energy_smart",
-        "const.py"
+        "const.py",
     )
 
-    with open(const_path, encoding='utf-8') as f:
+    with open(const_path, encoding="utf-8") as f:
         content = f.read()
 
     # Should have DOMAIN defined
@@ -74,10 +74,10 @@ def test_get_device_info_function_exists():
         "..",
         "custom_components",
         "sabiana_energy_smart",
-        "const.py"
+        "const.py",
     )
 
-    with open(const_path, encoding='utf-8') as f:
+    with open(const_path, encoding="utf-8") as f:
         content = f.read()
 
     assert "def get_device_info(" in content
@@ -90,10 +90,10 @@ def test_register_definitions_structure():
         "..",
         "custom_components",
         "sabiana_energy_smart",
-        "const.py"
+        "const.py",
     )
 
-    with open(const_path, encoding='utf-8') as f:
+    with open(const_path, encoding="utf-8") as f:
         content = f.read()
 
     # Parse the AST to check structure
@@ -105,19 +105,24 @@ def test_register_definitions_structure():
             for target in node.targets:
                 if isinstance(target, ast.Name):
                     name = target.id
-                    if name.endswith('_DEFINITIONS') or name == 'SENSOR_DEFINITIONS_NEW':
+                    if (
+                        name.endswith("_DEFINITIONS")
+                        or name == "SENSOR_DEFINITIONS_NEW"
+                    ):
                         # Check that it's assigned a dictionary or list
                         if isinstance(node.value, (ast.Dict, ast.List)):
                             found_definitions[name] = True
 
     expected = [
-        'SENSOR_DEFINITIONS_NEW',
-        'REGISTER_DEFINITIONS',
-        'SWITCH_DEFINITIONS',
-        'BUTTON_DEFINITIONS',
-        'SELECT_DEFINITIONS',
-        'DIAGNOSTIC_DEFINITIONS'
+        "SENSOR_DEFINITIONS_NEW",
+        "REGISTER_DEFINITIONS",
+        "SWITCH_DEFINITIONS",
+        "BUTTON_DEFINITIONS",
+        "SELECT_DEFINITIONS",
+        "DIAGNOSTIC_DEFINITIONS",
     ]
 
     for def_name in expected:
-        assert def_name in found_definitions, f"Definition {def_name} not found as dictionary or list"
+        assert def_name in found_definitions, (
+            f"Definition {def_name} not found as dictionary or list"
+        )

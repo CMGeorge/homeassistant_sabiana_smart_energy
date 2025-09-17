@@ -11,7 +11,7 @@ def test_manifest_json_valid():
         "..",
         "custom_components",
         "sabiana_energy_smart",
-        "manifest.json"
+        "manifest.json",
     )
 
     assert os.path.exists(manifest_path), "manifest.json file does not exist"
@@ -40,7 +40,7 @@ def test_version_format():
         "..",
         "custom_components",
         "sabiana_energy_smart",
-        "manifest.json"
+        "manifest.json",
     )
 
     with open(manifest_path) as f:
