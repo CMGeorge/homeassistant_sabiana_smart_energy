@@ -5,8 +5,8 @@ from typing import Any
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
-from .modbus_client import SabianaModbusClient
 from .const import LOGGER
+from .modbus_client import SabianaModbusClient
 
 
 class SabianaModbusCoordinator(DataUpdateCoordinator):

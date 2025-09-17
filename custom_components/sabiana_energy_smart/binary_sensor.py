@@ -1,14 +1,15 @@
 from __future__ import annotations
+
 import logging
 
 from homeassistant.components.binary_sensor import BinarySensorEntity
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from homeassistant.core import HomeAssistant
-from homeassistant.config_entries import ConfigEntry
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import DOMAIN, DIAGNOSTIC_DEFINITIONS, get_device_info
+from .const import DIAGNOSTIC_DEFINITIONS, DOMAIN, get_device_info
 
 _LOGGER = logging.getLogger(__name__)
 

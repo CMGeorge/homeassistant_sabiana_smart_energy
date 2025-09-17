@@ -120,6 +120,13 @@ www/
 *.swo
 *~
 
-# OS files
+# OS
 .DS_Store
 Thumbs.db
+
+# Home Assistant
+*.log
+.HA_VERSION
+secrets.yaml
+known_devices.yaml
+ip_bans.yaml
