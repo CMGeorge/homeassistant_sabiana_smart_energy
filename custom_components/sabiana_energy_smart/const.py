@@ -1,4 +1,5 @@
 import logging
+
 from homeassistant.helpers.entity import EntityCategory
 
 DOMAIN = "sabiana_energy_smart"

@@ -2,13 +2,14 @@ from __future__ import annotations
 from typing import Any
 
 from homeassistant.components.select import SelectEntity
-from homeassistant.helpers.update_coordinator import CoordinatorEntity
-from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from homeassistant.core import HomeAssistant
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity import DeviceInfo
+from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import DOMAIN, SELECT_DEFINITIONS, LOGGER, get_device_info
+from .const import DOMAIN, LOGGER, SELECT_DEFINITIONS, get_device_info
+
 
 
 async def async_setup_entry(

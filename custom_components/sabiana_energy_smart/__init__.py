@@ -6,9 +6,11 @@ from homeassistant.const import (
     # EVENT_HOMEASSISTANT_STOP,
     Platform,
 )
+from homeassistant.core import HomeAssistant
 
+from .const import DOMAIN, LOGGER
 from .modbus_coordinator import SabianaModbusCoordinator
-from .const import LOGGER, DOMAIN
+
 # from .info_sensor import SabianaInfoCoordinator
 
 # _LOGGER = logging.getLogger(__name__)

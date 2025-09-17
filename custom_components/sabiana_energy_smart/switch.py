@@ -4,11 +4,15 @@ from homeassistant.components.switch import SwitchEntity
 
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.helpers.entity import DeviceInfo
+
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import DOMAIN, SWITCH_DEFINITIONS, LOGGER, get_device_info
+from .const import DOMAIN, LOGGER, SWITCH_DEFINITIONS, get_device_info
+
 
 
 class SabianaSwitch(CoordinatorEntity, SwitchEntity):
