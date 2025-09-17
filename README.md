@@ -3,6 +3,8 @@
 A custom integration for Home Assistant that enables communication with **Sabiana Smart Energy** heat recovery units over **Modbus** (RTU or TCP).  
 This integration provides access to diagnostic data, environmental sensors, fan status, and control over various operational parameters.
 
+[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=CMGerorge&repository=https%3A%2F%2Fgithub.com%2FCMGeorge%2Fhomeassistant_sabiana_smart_energy&category=Integration)
+
 ---
 
 ## 🔧 Features
