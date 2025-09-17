@@ -1,4 +1,3 @@
-import logging
 from homeassistant.core import HomeAssistant
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
@@ -30,6 +29,7 @@ PLATFORMS: list[Platform] = [
 # PLATFORMS = ["sensor","number","switch","binary_sensor","select"]
 # , "number", "switch", "binary_sensor", "select"]
 
+
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up Sabiana Energy Smart from a config entry."""
     LOGGER.debug("Initializing Sabiana integration")
@@ -47,6 +47,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     LOGGER.info("Sabiana Energy Smart integration initialized successfully")
     return True
+
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload a config entry."""

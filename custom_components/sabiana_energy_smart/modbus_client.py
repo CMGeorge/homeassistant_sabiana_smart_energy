@@ -4,6 +4,7 @@ from pymodbus.exceptions import ModbusException
 
 _LOGGER = logging.getLogger(__name__)
 
+
 class SabianaModbusClient:
     """Handles persistent async Modbus TCP communication for Sabiana devices."""
 
@@ -55,9 +56,7 @@ class SabianaModbusClient:
 
         return None
 
-    async def write_register(
-        self, address: int, value: int, slave: int = 1
-    ) -> bool:
+    async def write_register(self, address: int, value: int, slave: int = 1) -> bool:
         """Write a value to a Modbus register."""
         if not await self.ensure_connected():
             return False
