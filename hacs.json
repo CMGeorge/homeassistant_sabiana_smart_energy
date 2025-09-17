@@ -2,5 +2,5 @@
     "name": "Sabiana Energy Smart",
     "hacs": "2.0.5",
     "homeassistant": "2025.9.1",
-    "description" : "A custom integration for Home Assistant that enables communication with Sabiana Smart Energy heat recovery units over Modbus (RTU or TCP)."
+    "render_readme": true
 }
