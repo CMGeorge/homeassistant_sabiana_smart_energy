@@ -1,13 +1,13 @@
 from __future__ import annotations
 
 from homeassistant.components.number import NumberEntity
-from homeassistant.helpers.update_coordinator import CoordinatorEntity
-from homeassistant.helpers.entity import DeviceInfo
-from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers.entity import DeviceInfo
+from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import DOMAIN, NUMBER_DEFINITIONS, get_device_info, LOGGER
+from .const import DOMAIN, LOGGER, NUMBER_DEFINITIONS, get_device_info
 
 
 class SabianaNumberEntity(CoordinatorEntity, NumberEntity):

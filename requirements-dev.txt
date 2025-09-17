@@ -1,0 +1,4 @@
+# Development dependencies
+ruff>=0.1.0
+yamllint>=1.35.0
+pre-commit>=3.0.0
