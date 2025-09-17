@@ -5,6 +5,7 @@ from homeassistant.data_entry_flow import FlowResult
 from homeassistant.const import CONF_HOST, CONF_PORT, CONF_NAME
 from .const import DOMAIN, CONF_SLAVE
 
+
 class MyModbusDeviceConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """Handle a config flow for My Modbus Device."""
 
@@ -16,7 +17,8 @@ class MyModbusDeviceConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     async def async_step_user(self, user_input=None) -> FlowResult:
         if user_input is not None:
             existing = [
-                entry for entry in self._async_current_entries()
+                entry
+                for entry in self._async_current_entries()
                 if entry.data[CONF_HOST] == user_input[CONF_HOST]
                 and entry.data[CONF_PORT] == user_input[CONF_PORT]
             ]
@@ -26,11 +28,13 @@ class MyModbusDeviceConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
         return self.async_show_form(
             step_id="user",
-            data_schema=vol.Schema({
-                vol.Required(CONF_NAME, default="Sabiana HRV"): str,
-                vol.Required(CONF_HOST): str,
-                vol.Required(CONF_PORT, default=502): int,
-                vol.Required(CONF_SLAVE, default=1): int,
-            }),
-            errors=self._errors
+            data_schema=vol.Schema(
+                {
+                    vol.Required(CONF_NAME, default="Sabiana HRV"): str,
+                    vol.Required(CONF_HOST): str,
+                    vol.Required(CONF_PORT, default=502): int,
+                    vol.Required(CONF_SLAVE, default=1): int,
+                }
+            ),
+            errors=self._errors,
         )

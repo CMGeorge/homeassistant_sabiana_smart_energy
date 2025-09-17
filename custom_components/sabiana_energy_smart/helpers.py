@@ -10,7 +10,9 @@ def decode_modbus_value(
         return None
 
     if type_ == "char":
-        text = "".join(chr(r & 0xFF) + chr((r >> 8) & 0xFF) for r in raw[:data_length // 2])
+        text = "".join(
+            chr(r & 0xFF) + chr((r >> 8) & 0xFF) for r in raw[: data_length // 2]
+        )
         return text.strip("\x00")
 
     if type_ == "uns32" and len(raw) >= 2:

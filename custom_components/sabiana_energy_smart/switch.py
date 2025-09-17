@@ -1,16 +1,15 @@
 from __future__ import annotations
-import logging
 
 from homeassistant.components.switch import SwitchEntity
-from homeassistant.components.button import ButtonEntity
 
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
-from homeassistant.helpers.entity import DeviceInfo, EntityCategory
+from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import DOMAIN, SWITCH_DEFINITIONS, LOGGER, get_device_info
+
 
 class SabianaSwitch(CoordinatorEntity, SwitchEntity):
     """Modbus-based switch entity for Sabiana."""
@@ -42,7 +41,9 @@ class SabianaSwitch(CoordinatorEntity, SwitchEntity):
             if ok:
                 LOGGER.debug("Wrote value 1 to 0x%04X", self._address)
         except Exception as err:
-            LOGGER.error("Failed to turn ON %s at 0x%04X: %s", self.name, self._address, err)
+            LOGGER.error(
+                "Failed to turn ON %s at 0x%04X: %s", self.name, self._address, err
+            )
 
     async def async_turn_off(self, **kwargs):
         try:
@@ -50,13 +51,13 @@ class SabianaSwitch(CoordinatorEntity, SwitchEntity):
             if ok:
                 LOGGER.debug("Wrote value 0 to 0x%04X", self._address)
         except Exception as err:
-            LOGGER.error("Failed to turn OFF %s at 0x%04X: %s", self.name, self._address, err)
+            LOGGER.error(
+                "Failed to turn OFF %s at 0x%04X: %s", self.name, self._address, err
+            )
 
 
 async def async_setup_entry(
-    hass: HomeAssistant,
-    entry: ConfigEntry,
-    async_add_entities: AddEntitiesCallback
+    hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
 ):
     coordinator = hass.data[DOMAIN][entry.entry_id]
     switches = []
@@ -65,7 +66,9 @@ async def async_setup_entry(
         if props.get("entity_type") == "switch":
             coordinator.register_address(address)
             switches.append(
-                SabianaSwitch(coordinator, {**props, "address": address}, entry.entry_id)
+                SabianaSwitch(
+                    coordinator, {**props, "address": address}, entry.entry_id
+                )
             )
 
     LOGGER.debug("Adding %d switches", len(switches))

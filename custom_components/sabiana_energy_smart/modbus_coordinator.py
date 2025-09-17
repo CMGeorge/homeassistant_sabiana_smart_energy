@@ -1,4 +1,3 @@
-import logging
 import asyncio
 from datetime import timedelta
 from typing import Any
@@ -8,6 +7,8 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
 from .modbus_client import SabianaModbusClient
 from .const import LOGGER
+
+
 class SabianaModbusCoordinator(DataUpdateCoordinator):
     """Coordinator that polls only the Modbus addresses registered by entities."""
 
@@ -47,7 +48,9 @@ class SabianaModbusCoordinator(DataUpdateCoordinator):
         - Immediately reflect the new raw value in coordinator.data
         - Schedule a short delayed refresh to reconcile with device
         """
-        ok = await self._client.write_register(address=address, value=value, slave=self._slave)
+        ok = await self._client.write_register(
+            address=address, value=value, slave=self._slave
+        )
         if ok:
             # Optimistic update for snappy UI
             new_data = dict(self.data or {})
@@ -69,7 +72,9 @@ class SabianaModbusCoordinator(DataUpdateCoordinator):
 
         for addr in self._active_addresses:
             try:
-                value = await self._client.read_register(address=addr, count=1, slave=self._slave)
+                value = await self._client.read_register(
+                    address=addr, count=1, slave=self._slave
+                )
                 results[addr] = value[0] if value else None
                 LOGGER.debug("Read 0x%04X → %s", addr, results[addr])
             except Exception as err:
