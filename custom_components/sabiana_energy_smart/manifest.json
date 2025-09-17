@@ -8,7 +8,7 @@
     "dependencies": [
         "modbus"
     ],
-    "documentation": "https://github.com/CMGeorge/homeassistant_sabiana_smart_energy/blob/main/README.md",
+    "documentation": "https://github.com/CMGeorge/homeassistant_sabiana_smart_energy",
     "integration_type": "hub",
     "iot_class": "local_polling",
     "issue_tracker": "https://github.com/CMGeorge/homeassistant_sabiana_smart_energy/issues",
