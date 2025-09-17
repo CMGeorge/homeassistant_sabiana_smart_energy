@@ -39,7 +39,10 @@ Always reference these instructions first and fallback to search or bash command
   - Takes <1 second. NEVER CANCEL. Set timeout to 30+ seconds.
 
 ### Testing and Validation
-- The integration does NOT have unit tests - it relies on Home Assistant integration testing
+- The integration now HAS automated unit tests for code validation
+- Tests focus on static analysis, syntax validation, and structure verification
+- Tests run without requiring Home Assistant installation
+- ALWAYS run testing before committing changes: `pytest` or `make test`
 - Manual testing requires Home Assistant installation and Modbus device/simulator
 - ALWAYS run linting and formatting before committing changes
 - CI validation is done via GitHub Actions (.github/workflows/*)
@@ -91,7 +94,12 @@ Always reference these instructions first and fallback to search or bash command
    yamllint .
    ```
 
-3. **Integration structure validation** - Check imports, syntax, and manifest:
+3. **Run tests** (NEVER CANCEL - takes <1 second):
+   ```bash
+   pytest
+   ```
+
+4. **Integration structure validation** - Check imports, syntax, and manifest:
    ```bash
    python3 -c "
    import ast
@@ -223,12 +231,13 @@ To use the devcontainer:
 ### Full development workflow from fresh clone:
 ```bash
 # 1. Install dependencies (NEVER CANCEL - takes 1-3 minutes)
-python3 -m pip install ruff yamllint pymodbus>=3.0.0
+python3 -m pip install ruff yamllint pymodbus>=3.0.0 pytest pytest-cov voluptuous
 
 # 2. Run full validation (takes <1 second)
 python3 -m ruff check .
 python3 -m ruff format . --check
 yamllint .
+pytest
 
 # 3. Fix any issues
 python3 -m ruff check . --fix

@@ -8,9 +8,6 @@ import voluptuous as vol
 from .const import CONF_SLAVE, DOMAIN
 
 
-
-
-
 class MyModbusDeviceConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """Handle a config flow for My Modbus Device."""
 
