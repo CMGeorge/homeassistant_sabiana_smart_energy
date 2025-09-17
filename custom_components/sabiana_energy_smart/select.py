@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 from typing import Any
 
 from homeassistant.components.select import SelectEntity
@@ -9,9 +10,6 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import DOMAIN, LOGGER, SELECT_DEFINITIONS, get_device_info
-
-
-
 
 
 async def async_setup_entry(

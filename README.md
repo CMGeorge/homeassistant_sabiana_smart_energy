@@ -99,19 +99,61 @@ cd homeassistant_sabiana_smart_energy
 pip install -r requirements-dev.txt
 
 # Run linting and formatting
-make check          # Run all checks
+make check          # Run all checks (lint, format, test)
 make lint           # Run linting only
 make format         # Format code
 make lint-fix       # Fix linting issues
+make test           # Run tests
+make test-cov       # Run tests with coverage
 
-# Or use ruff directly
+# Or use tools directly
 ruff check .        # Check for issues
 ruff check . --fix  # Fix issues automatically
 ruff format .       # Format code
+pytest              # Run tests
+pytest --cov       # Run tests with coverage
 
 # Set up pre-commit hooks (optional)
 pre-commit install
 ```
+
+### 🧪 Testing
+
+The integration includes automated tests to ensure code quality and functionality:
+
+**Test Categories:**
+- **Manifest validation**: Ensures `manifest.json` is valid and contains required fields
+- **Code structure tests**: Validates all Python files have correct syntax and structure
+- **Configuration tests**: Tests config flow validation without requiring Home Assistant runtime
+- **Register definitions**: Validates Modbus register definitions in `const.py`
+- **Integration tests**: Checks file structure and imports
+
+**Running Tests:**
+```bash
+# Run all tests
+make test
+
+# Run tests with coverage report
+make test-cov
+
+# Run tests directly with pytest
+pytest
+pytest -v  # verbose output
+pytest tests/test_manifest.py  # run specific test file
+```
+
+**Test Structure:**
+```
+tests/
+├── __init__.py
+├── conftest.py              # Test configuration and fixtures
+├── test_manifest.py         # Manifest.json validation tests
+├── test_const.py           # Constants and register definition tests
+├── test_config_flow.py     # Configuration flow tests
+└── test_integration.py     # Integration and syntax tests
+```
+
+**Note**: These tests are designed to work without a full Home Assistant installation, focusing on static analysis, syntax validation, and structure verification.
 
 📚 Modbus Register Map
 

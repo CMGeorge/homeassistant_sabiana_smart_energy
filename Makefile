@@ -1,4 +1,4 @@
-.PHONY: lint format check install-dev
+.PHONY: lint format check install-dev test
 
 # Install development dependencies
 install-dev:
@@ -20,8 +20,16 @@ format:
 format-check:
 	ruff format . --check
 
+# Run tests
+test:
+	pytest
+
+# Run tests with coverage
+test-cov:
+	pytest --cov=custom_components.sabiana_energy_smart --cov-report=term-missing
+
 # Run all checks
-check: lint format-check
+check: lint format-check test
 
 # Run all fixes
 fix: lint-fix format

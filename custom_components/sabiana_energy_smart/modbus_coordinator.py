@@ -9,7 +9,6 @@ from .const import LOGGER
 from .modbus_client import SabianaModbusClient
 
 
-
 class SabianaModbusCoordinator(DataUpdateCoordinator):
     """Coordinator that polls only the Modbus addresses registered by entities."""
 
