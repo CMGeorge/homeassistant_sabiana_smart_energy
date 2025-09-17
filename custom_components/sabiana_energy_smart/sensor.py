@@ -2,14 +2,13 @@ from __future__ import annotations
 from typing import Any
 
 from homeassistant.components.sensor import SensorEntity
-from homeassistant.helpers.entity import DeviceInfo
-from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers.entity import DeviceInfo
+from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import DOMAIN, SENSOR_DEFINITIONS_NEW, LOGGER, get_device_info
-
+from .const import DOMAIN, LOGGER, SENSOR_DEFINITIONS_NEW, get_device_info
 
 # Build sensor definitions from the new structure
 SENSOR_DEFINITIONS = [

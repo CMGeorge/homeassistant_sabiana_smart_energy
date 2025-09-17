@@ -86,6 +86,33 @@ cp -r homeassistant_sabiana_smart_energy/custom_components/sabiana_smart_energy 
 
 ```
 
+### 🧪 Development Setup
+
+For development and contributing:
+
+```bash
+# Clone the repository
+git clone https://github.com/CMGeorge/homeassistant_sabiana_smart_energy.git
+cd homeassistant_sabiana_smart_energy
+
+# Install development dependencies
+pip install -r requirements-dev.txt
+
+# Run linting and formatting
+make check          # Run all checks
+make lint           # Run linting only
+make format         # Format code
+make lint-fix       # Fix linting issues
+
+# Or use ruff directly
+ruff check .        # Check for issues
+ruff check . --fix  # Fix issues automatically
+ruff format .       # Format code
+
+# Set up pre-commit hooks (optional)
+pre-commit install
+```
+
 📚 Modbus Register Map
 
 This integration is based on Sabiana’s official Modbus documentation.
