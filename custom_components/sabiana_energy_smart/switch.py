@@ -15,6 +15,7 @@ from .const import DOMAIN, LOGGER, SWITCH_DEFINITIONS, get_device_info
 
 
 
+
 class SabianaSwitch(CoordinatorEntity, SwitchEntity):
     """Modbus-based switch entity for Sabiana."""
 

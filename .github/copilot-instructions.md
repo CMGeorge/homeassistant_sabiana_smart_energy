@@ -1,10 +1,13 @@
-# Sabiana Smart Energy Home Assistant Integration
 
-This is a custom Home Assistant integration for monitoring and controlling Sabiana Smart Energy ventilation units via Modbus RTU or TCP. The integration provides sensors for air quality monitoring (CO₂, temperature, humidity, VOC, differential pressure), fan controls, operation modes, and diagnostic information.
+# Sabiana Smart Energy Integration for Home Assistant
+
+This is a custom Home Assistant integration that enables communication with Sabiana Smart Energy heat recovery units over Modbus (RTU or TCP). The integration provides access to diagnostic data, environmental sensors, fan status, and control over various operational parameters.
+
 
 Always reference these instructions first and fallback to search or bash commands only when you encounter unexpected information that does not match the info here.
 
 ## Working Effectively
+
 
 ### Development Environment Setup
 - Install Python 3.12+ (required for Home Assistant 2024.1+)
