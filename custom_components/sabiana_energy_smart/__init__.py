@@ -1,3 +1,4 @@
+from homeassistant.core import HomeAssistant
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
     # CONF_IP_ADDRESS,
