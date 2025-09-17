@@ -41,7 +41,9 @@ async def async_setup_entry(
         if props.get("entity_type") == "button":
             coordinator.register_address(address)
             buttons.append(
-                SabianaButton(coordinator, {**props, "address": address}, entry.entry_id)
+                SabianaButton(
+                    coordinator, {**props, "address": address}, entry.entry_id
+                )
             )
 
     LOGGER.debug("Adding %d buttons", len(buttons))

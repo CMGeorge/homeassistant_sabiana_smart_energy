@@ -14,6 +14,7 @@ _LOGGER = logging.getLogger(__name__)
 
 INVERSION_FLAG_ADDRESS = 0x0104  # CFG_Inverted
 
+
 async def async_setup_entry(
     hass: HomeAssistant,
     entry: ConfigEntry,
@@ -82,16 +83,33 @@ class SabianaBinarySensor(CoordinatorEntity, BinarySensorEntity):
 
         # ✅ Skip inversion logic if this sensor is the inversion flag itself
         if self._address == INVERSION_FLAG_ADDRESS and self._bit_num == 0:
-            _LOGGER.debug("%s: raw=0x%04X → bit[%d]=%s (inversion flag, no flip)", self.name, raw, self._bit_num, bit_value)
+            _LOGGER.debug(
+                "%s: raw=0x%04X → bit[%d]=%s (inversion flag, no flip)",
+                self.name,
+                raw,
+                self._bit_num,
+                bit_value,
+            )
             return bit_value
 
         # Apply global inversion if flag is set
         inversion = self.coordinator.data.get(INVERSION_FLAG_ADDRESS)
         if inversion is not None and (inversion & 0x01):
             bit_value = not bit_value
-            _LOGGER.debug("%s: raw=0x%04X → bit[%d]=%s (inverted)", self.name, raw, self._bit_num, bit_value)
+            _LOGGER.debug(
+                "%s: raw=0x%04X → bit[%d]=%s (inverted)",
+                self.name,
+                raw,
+                self._bit_num,
+                bit_value,
+            )
         else:
-            _LOGGER.debug("%s: raw=0x%04X → bit[%d]=%s (normal)", self.name, raw, self._bit_num, bit_value)
+            _LOGGER.debug(
+                "%s: raw=0x%04X → bit[%d]=%s (normal)",
+                self.name,
+                raw,
+                self._bit_num,
+                bit_value,
+            )
 
         return bit_value
-

@@ -15,8 +15,9 @@ from .const import DOMAIN, SENSOR_DEFINITIONS_NEW, LOGGER, get_device_info
 SENSOR_DEFINITIONS = [
     {**reg, "address": addr}
     for addr, reg in SENSOR_DEFINITIONS_NEW.items()
-    if not reg.get("entity_type")=="switch" and not reg.get("entity_type")=="button"
+    if not reg.get("entity_type") == "switch" and not reg.get("entity_type") == "button"
 ]
+
 
 async def async_setup_entry(
     hass: HomeAssistant,
@@ -31,9 +32,7 @@ async def async_setup_entry(
         if definition.get("type") == "float32":
             # For float32, we need to register both high and low addresses
             coordinator.register_address(definition["address"] + 1)
-        sensors.append(
-            SabianaModbusSensor(coordinator, definition, entry.entry_id)
-        )
+        sensors.append(SabianaModbusSensor(coordinator, definition, entry.entry_id))
     #     SabianaModbusSensor(coordinator, definition, entry.entry_id)
     #     for definition in SENSOR_DEFINITIONS:
     #     coordinator.register_address(definition["address"])
@@ -86,11 +85,15 @@ class SabianaModbusSensor(CoordinatorEntity, SensorEntity):
             raw_lo = self.coordinator.data.get(self._address + 1)
             if raw_hi is None or raw_lo is None:
                 LOGGER.debug(
-                    "No data for %s at addresses 0x%04X/0x%04X", self.name, self._address, self._address + 1
+                    "No data for %s at addresses 0x%04X/0x%04X",
+                    self.name,
+                    self._address,
+                    self._address + 1,
                 )
                 return None
 
             import struct
+
             try:
                 combined_bytes = struct.pack(">HH", raw_hi, raw_lo)
                 value = struct.unpack(">f", combined_bytes)[0]
@@ -99,20 +102,21 @@ class SabianaModbusSensor(CoordinatorEntity, SensorEntity):
                 return None
 
             scaled = round(value, self._precision)
-            LOGGER.debug("%s: raw float32=(%s, %s) → %s", self.name, raw_hi, raw_lo, scaled)
+            LOGGER.debug(
+                "%s: raw float32=(%s, %s) → %s", self.name, raw_hi, raw_lo, scaled
+            )
             return scaled
 
         # default UInt16 logic
         raw = self.coordinator.data.get(self._address)
         if raw is None:
-            LOGGER.debug(
-                "No data for %s at address 0x%04X", self.name, self._address
-            )
+            LOGGER.debug("No data for %s at address 0x%04X", self.name, self._address)
             return None
 
         scaled = round(raw * self._scale, self._precision)
         LOGGER.debug("%s: raw=%s → scaled=%s", self.name, raw, scaled)
         return scaled
+
     # @property
     # def native_value(self) -> float | None:
     #     """Return the scaled value from the coordinator’s data and log it."""

@@ -10,6 +10,7 @@ from homeassistant.helpers.entity import DeviceInfo
 
 from .const import DOMAIN, SELECT_DEFINITIONS, LOGGER, get_device_info
 
+
 async def async_setup_entry(
     hass: HomeAssistant,
     entry: ConfigEntry,
@@ -19,7 +20,14 @@ async def async_setup_entry(
     selects = []
 
     for addr, reg in SELECT_DEFINITIONS.items():
-        if reg.get("options") and reg.get("writable") and (not reg.get("entity_type") == "switch" and not reg.get("entity_type") == "button"):
+        if (
+            reg.get("options")
+            and reg.get("writable")
+            and (
+                not reg.get("entity_type") == "switch"
+                and not reg.get("entity_type") == "button"
+            )
+        ):
             coordinator.register_address(addr)
             selects.append(
                 SabianaModbusSelect(
@@ -81,6 +89,13 @@ class SabianaModbusSelect(CoordinatorEntity, SelectEntity):
         try:
             ok = await self.coordinator.async_write_register(self._address, value)
             if ok:
-                LOGGER.debug("Wrote value %d to 0x%04X for option '%s'", value, self._address, option)
+                LOGGER.debug(
+                    "Wrote value %d to 0x%04X for option '%s'",
+                    value,
+                    self._address,
+                    option,
+                )
         except Exception as err:
-            LOGGER.error("Failed to write option '%s' → 0x%04X: %s", option, self._address, err)
+            LOGGER.error(
+                "Failed to write option '%s' → 0x%04X: %s", option, self._address, err
+            )

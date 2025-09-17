@@ -19,6 +19,7 @@ SENSOR_DEFINITIONS = [
     if reg.get("readable")
 ]
 
+
 async def async_setup_entry(
     hass: HomeAssistant,
     entry: ConfigEntry,
@@ -66,7 +67,7 @@ class SabianaFirmwareSensor(SensorEntity):
             result = await self._client.read_register(
                 address=self._address,
                 count=self._length,
-                slave=1  # or from config if needed
+                slave=1,  # or from config if needed
             )
             self._raw_value = result if isinstance(result, list) else [result]
             _LOGGER.debug(
