@@ -912,64 +912,6 @@ DIAGNOSTIC_DEFINITIONS = {
     },
 }
 
-FIRMWARE_INFO = {
-    0x0000: {
-        "key": "device_serial_number",
-        "name": "Serial Number",
-        "unit": "",
-        "scale": 1,
-        "precision": 0,
-        "type": "char",
-        "dataLength": 20,
-        "readable": True,
-        "writable": False,
-    },
-    0x000A: {
-        "key": "controller_model",
-        "name": "Contoller Model",
-        "unit": "",
-        "scale": 1,
-        "precision": 0,
-        "type": "uns16",
-        "dataLength": 2,
-        "readable": True,
-        "writable": False,
-    },
-    0x000B: {
-        "key": "firmware_release",
-        "name": "Firmware Release",
-        "unit": "",
-        "scale": 1,
-        "precision": 0,
-        "type": "uns16",
-        "dataLength": 2,
-        "readable": True,
-        "writable": False,
-    },
-    0x000C: {
-        "key": "protocol_release",
-        "name": "Protocol Release",
-        "unit": "",
-        "scale": 1,
-        "precision": 0,
-        "type": "uns16",
-        "dataLength": 2,
-        "readable": True,
-        "writable": False,
-    },
-    0x000D: {
-        "key": "tep_release",
-        "name": "TEP Release",
-        "unit": "",
-        "scale": 1,
-        "precision": 0,
-        "type": "uns16",
-        "dataLength": 2,
-        "readable": True,
-        "writable": False,
-    },
-}
-
 
 def get_device_info(entry_id: str):
     return {
