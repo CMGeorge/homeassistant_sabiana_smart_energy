@@ -1,3 +1,16 @@
+"""Sensor platform for Sabiana Smart Energy integration.
+
+This module provides sensor entities for monitoring Sabiana device readings including:
+- Temperature sensors (T1: External, T2: Intake, T3: Extracted, T4: Exhaust)
+- Humidity and CO2 levels
+- Fan speeds (RPM and duty cycle)
+- Pressure differentials
+- Air density coefficients
+- Operational counters (fan hours, filter status)
+
+All sensors automatically scale raw Modbus values and provide appropriate units
+and device classes for Home Assistant integration.
+"""
 from __future__ import annotations
 
 from typing import Any
@@ -24,7 +37,17 @@ async def async_setup_entry(
     entry: ConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
-    """Set up Sabiana Modbus sensors based on config entry."""
+    """Set up Sabiana Modbus sensors based on config entry.
+
+    Creates sensor entities for all readable registers defined in SENSOR_DEFINITIONS.
+    Registers addresses with the coordinator for polling and handles special cases
+    like float32 values that span multiple registers.
+
+    Args:
+        hass: Home Assistant instance
+        entry: Config entry for this integration
+        async_add_entities: Callback to add entities to Home Assistant
+    """
     coordinator = hass.data[DOMAIN][entry.entry_id]
     sensors = []
     for definition in SENSOR_DEFINITIONS:
@@ -33,13 +56,6 @@ async def async_setup_entry(
             # For float32, we need to register both high and low addresses
             coordinator.register_address(definition["address"] + 1)
         sensors.append(SabianaModbusSensor(coordinator, definition, entry.entry_id))
-    #     SabianaModbusSensor(coordinator, definition, entry.entry_id)
-    #     for definition in SENSOR_DEFINITIONS:
-    #     coordinator.register_address(definition["address"])
-    #     sensors.append(
-    #         SabianaModbusSensor(coordinator, definition, entry.entry_id)
-    #     )
-    # ]
 
     LOGGER.debug("Adding %d Sabiana sensors", len(sensors))
     for sensor in sensors:
@@ -49,7 +65,21 @@ async def async_setup_entry(
 
 
 class SabianaModbusSensor(CoordinatorEntity, SensorEntity):
-    """Sensor entity for a Modbus register on the Sabiana device."""
+    """Sensor entity for a Modbus register on the Sabiana device.
+
+    This class represents a single sensor reading from the Sabiana device.
+    It handles:
+    - Automatic value scaling based on register definition
+    - Type conversion (uint16, int16, float32)
+    - Unit of measurement and device class assignment
+    - Integration with Home Assistant's coordinator pattern for efficient updates
+
+    Attributes:
+        _address: Modbus register address (e.g., 0x0100 for T1 temperature)
+        _scale: Scaling factor to apply to raw values (e.g., 0.1 for 0.1°C resolution)
+        _precision: Number of decimal places for display
+        _type: Data type of the register (uint16, int16, float32)
+    """
 
     def __init__(
         self,
@@ -57,6 +87,13 @@ class SabianaModbusSensor(CoordinatorEntity, SensorEntity):
         reg: dict[str, Any],
         entry_id: str,
     ):
+        """Initialize a Sabiana sensor entity.
+
+        Args:
+            coordinator: Modbus coordinator for data updates
+            reg: Register definition dict containing address, scale, unit, etc.
+            entry_id: Config entry ID for device info linkage
+        """
         super().__init__(coordinator)
         self._address = reg["address"]
         self._scale = reg.get("scale", 1)
@@ -116,19 +153,3 @@ class SabianaModbusSensor(CoordinatorEntity, SensorEntity):
         scaled = round(raw * self._scale, self._precision)
         LOGGER.debug("%s: raw=%s → scaled=%s", self.name, raw, scaled)
         return scaled
-
-    # @property
-    # def native_value(self) -> float | None:
-    #     """Return the scaled value from the coordinator’s data and log it."""
-    #     raw = self.coordinator.data.get(self._address)
-    #     if raw is None:
-    #         LOGGER.debug(
-    #             "No data for %s at address 0x%04X", self.name, self._address
-    #         )
-    #         return None
-
-    #     scaled = round(raw * self._scale, self._precision)
-    #     LOGGER.debug(
-    #         "%s: raw=%s → scaled=%s", self.name, raw, scaled
-    #     )
-    #     return scaled
