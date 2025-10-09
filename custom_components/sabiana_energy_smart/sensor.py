@@ -33,13 +33,6 @@ async def async_setup_entry(
             # For float32, we need to register both high and low addresses
             coordinator.register_address(definition["address"] + 1)
         sensors.append(SabianaModbusSensor(coordinator, definition, entry.entry_id))
-    #     SabianaModbusSensor(coordinator, definition, entry.entry_id)
-    #     for definition in SENSOR_DEFINITIONS:
-    #     coordinator.register_address(definition["address"])
-    #     sensors.append(
-    #         SabianaModbusSensor(coordinator, definition, entry.entry_id)
-    #     )
-    # ]
 
     LOGGER.debug("Adding %d Sabiana sensors", len(sensors))
     for sensor in sensors:
@@ -116,19 +109,3 @@ class SabianaModbusSensor(CoordinatorEntity, SensorEntity):
         scaled = round(raw * self._scale, self._precision)
         LOGGER.debug("%s: raw=%s → scaled=%s", self.name, raw, scaled)
         return scaled
-
-    # @property
-    # def native_value(self) -> float | None:
-    #     """Return the scaled value from the coordinator’s data and log it."""
-    #     raw = self.coordinator.data.get(self._address)
-    #     if raw is None:
-    #         LOGGER.debug(
-    #             "No data for %s at address 0x%04X", self.name, self._address
-    #         )
-    #         return None
-
-    #     scaled = round(raw * self._scale, self._precision)
-    #     LOGGER.debug(
-    #         "%s: raw=%s → scaled=%s", self.name, raw, scaled
-    #     )
-    #     return scaled
