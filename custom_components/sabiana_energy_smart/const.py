@@ -7,23 +7,6 @@ CONF_SLAVE = "slave"
 
 LOGGER = logging.getLogger(__package__)
 
-# SENSOR_DEFINITIONS = [
-#     {"name": "RVU Temp Probe 1", "address": 0x0100, "unit": "°C", "scale": 0.1, "precision": 1, "device_class": "temperature", "unique_id": "sabiana_sensor_probe_temp1"},
-#     {"name": "RVU Temp Probe 2", "address": 0x0101, "unit": "°C", "scale": 0.1, "precision": 1, "device_class": "temperature", "unique_id": "sabiana_sensor_probe_temp2"},
-#     {"name": "RVU Temp Probe 3", "address": 0x0102, "unit": "°C", "scale": 0.1, "precision": 1, "device_class": "temperature", "unique_id": "sabiana_sensor_probe_temp3"},
-#     {"name": "RVU Temp Probe 4", "address": 0x0103, "unit": "°C", "scale": 0.1, "precision": 1, "device_class": "temperature", "unique_id": "sabiana_sensor_probe_temp4"},
-#     {"name": "Fan 1 Speed RPM", "address": 0x010B, "unit": "rpm", "unique_id": "sabiana_sensor_fan1_speed_rpm"},
-#     {"name": "Fan 2 Speed RPM", "address": 0x010C, "unit": "rpm", "unique_id": "sabiana_sensor_fan2_speed_rpm"},
-#     {"name": "Fan 1 Duty %", "address": 0x010D, "unit": "%", "scale": 0.1, "precision": 1, "unique_id": "sabiana_sensor_fan1_speed_percent"},
-#     {"name": "Fan 2 Duty %", "address": 0x010E, "unit": "%", "scale": 0.1, "precision": 1, "unique_id": "sabiana_sensor_fan2_speed_percent"},
-#     {"name": "Preheater Duty %", "address": 0x010F, "unit": "%", "unique_id": "sabiana_sensor_preaheter_percent"},
-#     {"name": "Humidity Setpoint", "address": 0x0106, "unit": "%", "scale": 0.1, "precision": 1, "device_class": "humidity", "unique_id": "sabiana_sensor_humidity_setpoin"},
-#     {"name": "CO2 Level", "address": 0x0113, "unit": "ppm", "scale": 0.01, "precision": 2, "device_class": "carbon_dioxide", "unique_id": "sabiana_sensor_co2_level"},
-#     {"name": "RVU Operating Mode", "address": 0x0119, "unique_id": "sabiana_sensor_operation_mode"},
-#     {"name": "Party Mode Status", "address": 0x011A, "unique_id": "sabiana_sensor_partymode"},
-#     {"name": "Filter Alarm", "address": 0x0107, "unique_id": "sabiana_sensor_filter_alarm"},
-# ]
-
 SENSOR_DEFINITIONS_NEW = {
     0x0100: {
         "key": "probe_temp1",
@@ -742,6 +725,26 @@ REGISTER_DEFINITIONS = {
         "min": 60,
         "max": 80,
         "readable": True,
+        "writable": True,
+    },
+    0x030B: {
+        "key": "CO2SensExt",
+        "name": "CO2 external sensor reading",
+        "unit": "ppm",
+        "scale": 0.01,
+        "precision": 2,
+        "min": 100,
+        "max": 30000,
+        "writable": True,
+    },
+    0x030A: {
+        "key": "RelHumSensExt",
+        "name": "RH external sensor reading",
+        "unit": "%",
+        "scale": 0.1,
+        "precision": 2,
+        "min": 10,
+        "max": 1000,
         "writable": True,
     },
     # 0x0210: {
