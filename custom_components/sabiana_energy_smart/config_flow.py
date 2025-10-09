@@ -13,9 +13,6 @@ class MyModbusDeviceConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
     VERSION = 1
 
-    def __init__(self):
-        self._errors = {}
-
     async def async_step_user(self, user_input=None) -> FlowResult:
         if user_input is not None:
             existing = [
@@ -38,5 +35,4 @@ class MyModbusDeviceConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     vol.Required(CONF_SLAVE, default=1): int,
                 }
             ),
-            errors=self._errors,
         )
