@@ -15,6 +15,7 @@ SENSOR_DEFINITIONS_NEW = {
         "scale": 0.1,
         "precision": 1,
         "device_class": "temperature",
+        "type": "int16",
         "readable": True,
     },
     0x0101: {
@@ -24,6 +25,7 @@ SENSOR_DEFINITIONS_NEW = {
         "scale": 0.1,
         "precision": 1,
         "device_class": "temperature",
+        "type": "int16",
         "readable": True,
     },
     0x0102: {
@@ -33,6 +35,7 @@ SENSOR_DEFINITIONS_NEW = {
         "scale": 0.1,
         "precision": 1,
         "device_class": "temperature",
+        "type": "int16",
         "readable": True,
     },
     0x0103: {
@@ -42,6 +45,7 @@ SENSOR_DEFINITIONS_NEW = {
         "scale": 0.1,
         "precision": 1,
         "device_class": "temperature",
+        "type": "int16",
         "readable": True,
     },
     0x0106: {

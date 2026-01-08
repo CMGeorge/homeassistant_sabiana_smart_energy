@@ -32,10 +32,24 @@ class SabianaNumberEntity(CoordinatorEntity, NumberEntity):
         raw = self.coordinator.data.get(self._address)
         if raw is None:
             return None
+
+        # Handle signed 16-bit integers for temperature offsets
+        # Check if this register expects negative values (min < 0)
+        if self._attr_native_min_value < 0:
+            # Convert unsigned to signed if necessary (two's complement)
+            if raw > 0x7FFF:
+                raw = raw - 0x10000
+
         return round(raw * self._scale, self._precision)
 
     async def async_set_native_value(self, value: float) -> None:
         raw_value = round(value / self._scale)
+
+        # Handle signed 16-bit integers for temperature offsets
+        # Convert negative values to unsigned representation for Modbus
+        if raw_value < 0:
+            raw_value = raw_value + 0x10000
+
         try:
             ok = await self.coordinator.async_write_register(self._address, raw_value)
             if ok:
