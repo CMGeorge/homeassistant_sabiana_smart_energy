@@ -23,6 +23,25 @@ def test_sensor_file_syntax():
         raise AssertionError(f"Syntax error in sensor.py: {e}") from e
 
 
+def test_number_file_syntax():
+    """Test that number.py has valid syntax."""
+    number_path = os.path.join(
+        os.path.dirname(__file__),
+        "..",
+        "custom_components",
+        "sabiana_energy_smart",
+        "number.py",
+    )
+
+    with open(number_path, encoding="utf-8") as f:
+        content = f.read()
+
+    try:
+        ast.parse(content, number_path)
+    except SyntaxError as e:
+        raise AssertionError(f"Syntax error in number.py: {e}") from e
+
+
 def test_signed_integer_conversion_logic():
     """Test the signed integer conversion logic matches expected behavior."""
 
@@ -59,6 +78,31 @@ def test_signed_integer_conversion_logic():
     assert convert_to_signed(65535) == -1
 
 
+def test_signed_to_unsigned_conversion_for_writing():
+    """Test conversion from signed to unsigned for Modbus writes."""
+
+    def convert_to_unsigned(raw):
+        """Convert signed 16-bit int to unsigned 16-bit int for Modbus."""
+        if raw < 0:
+            return raw + 0x10000
+        return raw
+
+    # Test negative value: -35 (for -3.5°C offset)
+    signed_neg = -35
+    unsigned_neg = convert_to_unsigned(signed_neg)
+    assert unsigned_neg == 65501, f"Expected 65501, got {unsigned_neg}"
+
+    # Test positive value: 235
+    signed_pos = 235
+    unsigned_pos = convert_to_unsigned(signed_pos)
+    assert unsigned_pos == 235, f"Expected 235, got {unsigned_pos}"
+
+    # Test edge cases
+    assert convert_to_unsigned(0) == 0
+    assert convert_to_unsigned(-1) == 65535
+    assert convert_to_unsigned(-32768) == 0x8000
+
+
 def test_temperature_sensors_have_int16_type():
     """Test that all temperature probe sensors have int16 type defined."""
     const_path = os.path.join(
@@ -89,9 +133,9 @@ def test_temperature_sensors_have_int16_type():
         next_section = content[probe_index : probe_index + 500]
 
         # Check if int16 type is defined
-        assert (
-            '"type": "int16"' in next_section
-        ), f"Probe {probe} does not have int16 type defined"
+        assert '"type": "int16"' in next_section, (
+            f"Probe {probe} does not have int16 type defined"
+        )
 
 
 def test_sensor_handles_int16_type():
@@ -113,9 +157,56 @@ def test_sensor_handles_int16_type():
     )
 
     # Check that it performs two's complement conversion
-    assert "if raw > 0x7FFF:" in content, (
-        "sensor.py does not check for negative values"
-    )
+    assert "if raw > 0x7FFF:" in content, "sensor.py does not check for negative values"
     assert "raw = raw - 0x10000" in content, (
         "sensor.py does not perform two's complement conversion"
+    )
+
+
+def test_number_handles_negative_values():
+    """Test that number.py handles negative values for reading."""
+    number_path = os.path.join(
+        os.path.dirname(__file__),
+        "..",
+        "custom_components",
+        "sabiana_energy_smart",
+        "number.py",
+    )
+
+    with open(number_path, encoding="utf-8") as f:
+        content = f.read()
+
+    # Check that it checks for negative min values
+    assert "if self._attr_native_min_value < 0:" in content, (
+        "number.py does not check for negative min values"
+    )
+
+    # Check that it performs two's complement conversion for reading
+    assert "if raw > 0x7FFF:" in content, (
+        "number.py does not check for negative values when reading"
+    )
+    assert "raw = raw - 0x10000" in content, (
+        "number.py does not perform two's complement conversion for reading"
+    )
+
+
+def test_number_handles_negative_values_for_writing():
+    """Test that number.py converts negative values for writing."""
+    number_path = os.path.join(
+        os.path.dirname(__file__),
+        "..",
+        "custom_components",
+        "sabiana_energy_smart",
+        "number.py",
+    )
+
+    with open(number_path, encoding="utf-8") as f:
+        content = f.read()
+
+    # Check that it converts negative values to unsigned for Modbus
+    assert "if raw_value < 0:" in content, (
+        "number.py does not check for negative values when writing"
+    )
+    assert "raw_value = raw_value + 0x10000" in content, (
+        "number.py does not convert negative to unsigned for writing"
     )
