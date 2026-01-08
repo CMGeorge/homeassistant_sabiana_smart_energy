@@ -107,11 +107,17 @@ class SabianaModbusSensor(CoordinatorEntity, SensorEntity):
             )
             return scaled
 
-        # default UInt16 logic
+        # Get raw value from coordinator
         raw = self.coordinator.data.get(self._address)
         if raw is None:
             LOGGER.debug("No data for %s at address 0x%04X", self.name, self._address)
             return None
+
+        # Handle signed 16-bit integers (int16/sig16)
+        if self._type in ("int16", "sig16"):
+            # Convert unsigned to signed if necessary (two's complement)
+            if raw > 0x7FFF:
+                raw = raw - 0x10000
 
         scaled = round(raw * self._scale, self._precision)
         LOGGER.debug("%s: raw=%s → scaled=%s", self.name, raw, scaled)
