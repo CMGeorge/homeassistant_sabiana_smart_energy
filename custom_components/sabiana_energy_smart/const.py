@@ -160,7 +160,6 @@ SENSOR_DEFINITIONS_NEW = {
         "scale": 0.1,
         "precision": 1,
         "type": "float32",
-        # "device_class": "humidity",
         "readable": True,
     },
     0x011D: {
@@ -185,75 +184,6 @@ SENSOR_DEFINITIONS_NEW = {
 
 
 REGISTER_DEFINITIONS = {
-    # 0x0000: {
-    #     "key": "device_serial_number",
-    #     "name": "Serial Number",
-    #     "unit": "",
-    #     "scale": 1,
-    #     "precision": 0,
-    #     "type": "char",
-    #     "dataLength": 20,
-    #     "readable": True,
-    #     "writable": False,
-    # },
-    # 0x000A: {
-    #     "key": "controller_model",
-    #     "name": "Contoller Model",
-    #     "unit": "",
-    #     "scale": 1,
-    #     "precision": 0,
-    #     "type": "uns16",
-    #     "dataLength": 2,
-    #     "readable": True,
-    #     "writable": False,
-    # },
-    # 0x000B: {
-    #     "key": "firmware_release",
-    #     "name": "Firmware Release",
-    #     "unit": "",
-    #     "scale": 1,
-    #     "precision": 0,
-    #     "type": "uns16",
-    #     "dataLength": 2,
-    #     "readable": True,
-    #     "writable": False,
-    # },
-    # 0x000C: {
-    #     "key": "protocol_release",
-    #     "name": "Protocol Release",
-    #     "unit": "",
-    #     "scale": 1,
-    #     "precision": 0,
-    #     "type": "uns16",
-    #     "dataLength": 2,
-    #     "readable": True,
-    #     "writable": False,
-    # },
-    # 0x000D: {
-    #     "key": "tep_release",
-    #     "name": "TEP Release",
-    #     "unit": "",
-    #     "scale": 1,
-    #     "precision": 0,
-    #     "type": "uns16",
-    #     "dataLength": 2,
-    #     "readable": True,
-    #     "writable": False,
-    # },
-    # ... (your original register definitions, as provided above)
-    # Should be implemented but don't recomand to be used... Maybe should use only the read method bit for diagnose?
-    # 0x0200: {
-    #     "key": "speed_1_pct",
-    #     "name": "1st speed %",
-    #     "unit": "%",
-    #     "device_class": "power_factor",
-    #     "scale": 1,
-    #     "precision": 0,
-    #     "min": 0,
-    #     "max": 35,
-    #     "readable": True,
-    #     "writable": True,
-    # },
     0x0201: {
         "key": "TempProbe1Ofst",
         "name": "Temp. probe 1 offset",
@@ -521,7 +451,6 @@ REGISTER_DEFINITIONS = {
         "max": 30,
         "readable": True,
         "writable": True,
-        # TODO: Should be multiplid with the scale factor, which is 0.1?
     },
     0x0219: {
         "key": "temp_winter_set",
@@ -669,8 +598,6 @@ REGISTER_DEFINITIONS = {
         "readable": True,
         "writable": True,
     },
-    # TODO: Bit Mod for 0x226
-    # Its a range... how is this set up? TODO: See and fix.
     0x0227: {
         "key": "CO2SensorRange",
         "name": "CO2 Sensor PPM Range",
@@ -698,8 +625,6 @@ REGISTER_DEFINITIONS = {
         "unit": "%",
         "scale": 0.1,
         "precision": 1,
-        # "min": 200,
-        # "max": 300,
         "min": 20,
         "max": 30,
         "readable": True,
@@ -883,8 +808,7 @@ SELECT_DEFINITIONS = {
 DIAGNOSTIC_DEFINITIONS = {
     0x0104: {
         "type": "uint16",
-        "entity_category": None,  # EntityCategory.NONE,
-        # EntityCategory.NONE,
+        "entity_category": None,
         "bits": {
             0: {"key": "cfg_inverted", "name": "Config Inverted"},
             1: {"key": "cfg_preheating", "name": "Preheating Present"},
@@ -902,7 +826,6 @@ DIAGNOSTIC_DEFINITIONS = {
     0x0105: {
         "type": "uint16",
         "entity_category": None,
-        # "entity_category": EntityCategory.CONFIG,
         "bits": {
             0: {"key": "remote_off", "name": "Remote OFF Active"},
             1: {"key": "bypass_active", "name": "Bypass Active"},
@@ -917,7 +840,6 @@ DIAGNOSTIC_DEFINITIONS = {
     },
     0x0108: {
         "type": "uint16",
-        # "entity_category": EntityCategory.CONFIG,
         "entity_category": None,
         "bits": {
             2: {"key": "OUT_Damper_CW", "name": "Damper CW output"},
@@ -926,7 +848,6 @@ DIAGNOSTIC_DEFINITIONS = {
     },
     0x0109: {
         "type": "uint8",
-        # "entity_category": EntityCategory.CONFIG,
         "entity_category": None,
         "bits": {
             0: {"key": "relay_iaq_fault", "name": "IAQ Fault Relay ON"},
@@ -938,7 +859,6 @@ DIAGNOSTIC_DEFINITIONS = {
     },
     0x010A: {
         "type": "uint8",
-        # "entity_category": EntityCategory.CONFIG,
         "entity_category": None,
         "bits": {
             1: {"key": "DIN_C1", "name": "Input C1 status"},
@@ -993,64 +913,6 @@ DIAGNOSTIC_DEFINITIONS = {
             1: {"key": "S_PRM_StopFanOn", "name": "Stop Mode Fan status"},
             2: {"key": "S_PRM_FlushFanOn", "name": "Flush Fan status"},
         },
-    },
-}
-
-FIRMWARE_INFO = {
-    0x0000: {
-        "key": "device_serial_number",
-        "name": "Serial Number",
-        "unit": "",
-        "scale": 1,
-        "precision": 0,
-        "type": "char",
-        "dataLength": 20,
-        "readable": True,
-        "writable": False,
-    },
-    0x000A: {
-        "key": "controller_model",
-        "name": "Contoller Model",
-        "unit": "",
-        "scale": 1,
-        "precision": 0,
-        "type": "uns16",
-        "dataLength": 2,
-        "readable": True,
-        "writable": False,
-    },
-    0x000B: {
-        "key": "firmware_release",
-        "name": "Firmware Release",
-        "unit": "",
-        "scale": 1,
-        "precision": 0,
-        "type": "uns16",
-        "dataLength": 2,
-        "readable": True,
-        "writable": False,
-    },
-    0x000C: {
-        "key": "protocol_release",
-        "name": "Protocol Release",
-        "unit": "",
-        "scale": 1,
-        "precision": 0,
-        "type": "uns16",
-        "dataLength": 2,
-        "readable": True,
-        "writable": False,
-    },
-    0x000D: {
-        "key": "tep_release",
-        "name": "TEP Release",
-        "unit": "",
-        "scale": 1,
-        "precision": 0,
-        "type": "uns16",
-        "dataLength": 2,
-        "readable": True,
-        "writable": False,
     },
 }
 

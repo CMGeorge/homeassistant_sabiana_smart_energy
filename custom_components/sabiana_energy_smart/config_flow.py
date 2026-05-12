@@ -1,3 +1,8 @@
+"""Configuration flow for Sabiana Smart Energy integration.
+
+Handles the UI-based setup flow for adding Sabiana devices to Home Assistant.
+Users provide connection details (host, port, slave ID) through a form.
+"""
 from __future__ import annotations
 
 from homeassistant import config_entries
@@ -9,14 +14,29 @@ from .const import CONF_SLAVE, DOMAIN
 
 
 class MyModbusDeviceConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
-    """Handle a config flow for My Modbus Device."""
+    """Handle a config flow for Sabiana Smart Energy.
+
+    This flow collects the necessary information to connect to a Sabiana device:
+    - Name: Friendly name for the device
+    - Host: IP address or hostname for Modbus TCP
+    - Port: TCP port (default 502)
+    - Slave ID: Modbus slave/unit ID (default 1)
+    """
 
     VERSION = 1
 
-    def __init__(self):
-        self._errors = {}
-
     async def async_step_user(self, user_input=None) -> FlowResult:
+        """Handle the initial step of user configuration.
+
+        Presents a form to the user and validates input. Prevents duplicate
+        entries by checking if a device with the same host and port already exists.
+
+        Args:
+            user_input: Dictionary of user-provided values, or None for initial display
+
+        Returns:
+            FlowResult: Either shows the form or creates the config entry
+        """
         if user_input is not None:
             existing = [
                 entry
@@ -38,5 +58,4 @@ class MyModbusDeviceConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     vol.Required(CONF_SLAVE, default=1): int,
                 }
             ),
-            errors=self._errors,
         )
