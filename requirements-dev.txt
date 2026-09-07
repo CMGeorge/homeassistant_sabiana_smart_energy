@@ -1,7 +1,7 @@
 # Development dependencies
 ruff>=0.15.13
 yamllint>=1.38.0
-pre-commit>=3.0.0
+pre-commit>=4.6.2
 pytest>=7.0.0
 pytest-cov>=4.0.0
 voluptuous>=0.16.0
