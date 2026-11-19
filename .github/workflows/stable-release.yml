@@ -1,0 +1,174 @@
+name: Stable release
+
+# Publish a stable release after a beta has been tested and confirmed.
+# Run it from the Actions tab: "Stable release" -> "Run workflow".
+# It releases the default branch, and only if the integration code there is
+# identical to what the tested beta contained. See RELEASING.md.
+
+on:
+  workflow_dispatch:
+    inputs:
+      beta_tag:
+        description: "Beta you tested and confirmed, e.g. 1.1.0-beta.1"
+        required: true
+      version:
+        description: "Stable version (empty = the beta's version without suffix, e.g. 1.1.0)"
+        required: false
+        default: ""
+      allow_untested_changes:
+        description: "Release even if the integration code differs from the tested beta"
+        type: boolean
+        required: false
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+env:
+  INTEGRATION_DIR: custom_components/sabiana_energy_smart
+  ZIP_NAME: sabiana_energy_smart.zip
+
+jobs:
+  release:
+    name: Build and publish stable release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout the default branch
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          fetch-depth: 0
+
+      - name: Validate the beta and the version
+        id: version
+        env:
+          BETA: ${{ inputs.beta_tag }}
+          INPUT_VERSION: ${{ inputs.version }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          if ! git rev-parse -q --verify "refs/tags/$BETA" >/dev/null; then
+            echo "::error::Beta tag $BETA does not exist"
+            exit 1
+          fi
+          if [ "$(gh release view "$BETA" --json isPrerelease --jq .isPrerelease)" != "true" ]; then
+            echo "::error::$BETA is not a published pre-release"
+            exit 1
+          fi
+          version="${INPUT_VERSION:-${BETA%%-*}}"
+          if ! [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::'$version' is not a stable version (expected e.g. 1.1.0)"
+            exit 1
+          fi
+          if git rev-parse -q --verify "refs/tags/$version" >/dev/null; then
+            echo "::error::Tag $version already exists"
+            exit 1
+          fi
+          latest="$(gh release list --exclude-pre-releases --exclude-drafts \
+            --limit 1 --json tagName --jq '.[0].tagName // ""')"
+          if [ -n "$latest" ]; then
+            highest="$(printf '%s\n%s\n' "$latest" "$version" | sort -V | tail -n1)"
+            if [ "$version" = "$latest" ] || [ "$highest" != "$version" ]; then
+              echo "::error::$version must be newer than the latest stable release $latest"
+              exit 1
+            fi
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "latest=$latest" >> "$GITHUB_OUTPUT"
+
+      - name: Check that the default branch contains exactly the tested code
+        env:
+          BETA: ${{ inputs.beta_tag }}
+          ALLOW: ${{ inputs.allow_untested_changes }}
+        run: |
+          set -euo pipefail
+          manifest="$INTEGRATION_DIR/manifest.json"
+          # Everything HACS installs, except the version line of the manifest.
+          changed="$(git diff --name-only "refs/tags/$BETA" HEAD -- \
+            "$INTEGRATION_DIR" hacs.json ":(exclude)$manifest")"
+          if ! diff <(git show "refs/tags/$BETA:$manifest" | jq -S 'del(.version)') \
+                    <(jq -S 'del(.version)' "$manifest") >/dev/null; then
+            changed="$(printf '%s\n%s' "$changed" "$manifest" | sed '/^$/d')"
+          fi
+          if [ -z "$changed" ]; then
+            echo "Integration code is identical to $BETA."
+            exit 0
+          fi
+          echo "Files that differ from the tested beta $BETA:"
+          echo "$changed"
+          if [ "$ALLOW" = "true" ]; then
+            echo "::warning::Releasing code that differs from $BETA (allow_untested_changes)"
+          else
+            echo "::error::The default branch differs from the tested beta $BETA." \
+              "Merge the tested PR without further changes, publish a new beta," \
+              "or re-run with allow_untested_changes."
+            exit 1
+          fi
+
+      - name: Set up Python
+        uses: actions/setup-python@v7.1.0
+        with:
+          python-version: "3.13"
+          cache: "pip"
+
+      - name: Lint and test
+        run: |
+          python3 -m pip install -r requirements-dev.txt
+          python3 -m ruff check .
+          python3 -m pytest
+
+      - name: Tag the release
+        id: tag
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          BETA: ${{ inputs.beta_tag }}
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          manifest="$INTEGRATION_DIR/manifest.json"
+          current="$(jq -r .version "$manifest")"
+          if [ "$current" != "$VERSION" ]; then
+            # Keep HACS and Home Assistant consistent: the tag must carry the
+            # release version. The commit only exists on the tag.
+            echo "::warning::manifest.json on the default branch says $current;" \
+              "tagging a release commit with $VERSION. Bump manifest.json in a PR."
+            jq --indent 4 --arg v "$VERSION" '.version = $v' "$manifest" > manifest.tmp
+            mv manifest.tmp "$manifest"
+            git add "$manifest"
+            git commit -m "Release $VERSION"
+          fi
+          git tag -a "$VERSION" -m "Release $VERSION (tested as $BETA)"
+          git push origin "refs/tags/$VERSION"
+
+      - name: Create the integration zip
+        run: |
+          set -euo pipefail
+          cd "$INTEGRATION_DIR"
+          zip -r "$GITHUB_WORKSPACE/$ZIP_NAME" . -x '*__pycache__*'
+
+      - name: Publish the release
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          LATEST: ${{ steps.version.outputs.latest }}
+          BETA: ${{ inputs.beta_tag }}
+          RELEASES_URL: ${{ github.server_url }}/${{ github.repository }}/releases
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          notes="Tested as pre-release [$BETA]($RELEASES_URL/tag/$BETA). Read the upgrade notes in the README before updating."
+          args=(--verify-tag --latest --title "$VERSION" --generate-notes --notes "$notes")
+          if [ -n "$LATEST" ]; then
+            args+=(--notes-start-tag "$LATEST")
+          fi
+          gh release create "$VERSION" "$ZIP_NAME" "${args[@]}"
+
+      - name: Remove the tag if publishing failed
+        if: failure() && steps.tag.outcome == 'success'
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: git push origin --delete "refs/tags/$VERSION"

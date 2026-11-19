@@ -1,5 +1,9 @@
 name: Release workflow
 
+# Runs when a release is published by hand in the GitHub UI. Releases made by
+# the "Beta release" / "Stable release" workflows already upload the zip
+# (releases created with GITHUB_TOKEN do not trigger this workflow).
+
 on:
   release:
     types:
@@ -19,19 +23,19 @@ jobs:
 
       - name: Validate data
         run: |
-          manifestversion=$(jq -r '.version' ${{ github.workspace }}/custom_components/homeassistant_sabiana_smart_energy/manifest.json)
+          manifestversion=$(jq -r '.version' ${{ github.workspace }}/custom_components/sabiana_energy_smart/manifest.json)
           if [ "$manifestversion" != "${{ steps.version.outputs.version }}" ]; then
-            echo "The version in custom_components/homeassistant_sabiana_smart_energy/manifest.json was not correct"
+            echo "The version in custom_components/sabiana_energy_smart/manifest.json was not correct"
             echo "$manifestversion"
             exit 1
           fi
 
       - name: Create zip file for the integration
         run: |
-          cd "${{ github.workspace }}/custom_components/homeassistant_sabiana_smart_energy"
-          zip homeassistant_sabiana_smart_energy.zip -r ./
+          cd "${{ github.workspace }}/custom_components/sabiana_energy_smart"
+          zip sabiana_energy_smart.zip -r ./
 
       - name: Upload the zipfile as a release asset
         uses: softprops/action-gh-release@v3.0.4
         with:
-          files: ${{ github.workspace }}/custom_components/homeassistant_sabiana_smart_energy/homeassistant_sabiana_smart_energy.zip
+          files: ${{ github.workspace }}/custom_components/sabiana_energy_smart/sabiana_energy_smart.zip

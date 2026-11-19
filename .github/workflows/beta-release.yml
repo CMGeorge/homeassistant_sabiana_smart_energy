@@ -1,0 +1,140 @@
+name: Beta release
+
+# Publish a pre-release that can be installed through HACS for testing.
+# Run it from the Actions tab: "Beta release" -> "Run workflow".
+# See RELEASING.md for the full flow.
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "Branch, tag or commit to build the beta from (e.g. a PR branch)"
+        required: true
+        default: "master"
+      version:
+        description: "Pre-release version, e.g. 1.1.0-beta.1"
+        required: true
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+env:
+  INTEGRATION_DIR: custom_components/sabiana_energy_smart
+  ZIP_NAME: sabiana_energy_smart.zip
+
+jobs:
+  beta:
+    name: Build and publish beta
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout the source
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.ref }}
+          fetch-depth: 0
+
+      - name: Validate the version
+        id: version
+        env:
+          VERSION: ${{ inputs.version }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+-(alpha|beta|rc|dev)\.?[0-9]+$ ]]; then
+            echo "::error::'$VERSION' is not a pre-release version. Use e.g. 1.1.0-beta.1"
+            exit 1
+          fi
+          if git ls-remote --exit-code --tags origin "refs/tags/$VERSION" >/dev/null; then
+            echo "::error::Tag $VERSION already exists. Use the next number, e.g. -beta.2"
+            exit 1
+          fi
+          base="${VERSION%%-*}"
+          latest="$(gh release list --exclude-pre-releases --exclude-drafts \
+            --limit 1 --json tagName --jq '.[0].tagName // ""')"
+          if [ -n "$latest" ]; then
+            highest="$(printf '%s\n%s\n' "$latest" "$base" | sort -V | tail -n1)"
+            if [ "$base" = "$latest" ] || [ "$highest" != "$base" ]; then
+              echo "::error::$VERSION must be newer than the latest stable release $latest"
+              exit 1
+            fi
+          fi
+          echo "latest=$latest" >> "$GITHUB_OUTPUT"
+          echo "source_sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Set up Python
+        uses: actions/setup-python@v7.1.0
+        with:
+          python-version: "3.13"
+          cache: "pip"
+
+      - name: Lint and test
+        run: |
+          python3 -m pip install -r requirements-dev.txt
+          python3 -m ruff check .
+          python3 -m pytest
+
+      - name: Create the release commit and tag
+        id: tag
+        env:
+          VERSION: ${{ inputs.version }}
+          REF: ${{ inputs.ref }}
+          SOURCE_SHA: ${{ steps.version.outputs.source_sha }}
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          manifest="$INTEGRATION_DIR/manifest.json"
+          jq --indent 4 --arg v "$VERSION" '.version = $v' "$manifest" > manifest.tmp
+          mv manifest.tmp "$manifest"
+          git add "$manifest"
+          # The release commit only exists on the tag; no branch is changed.
+          git commit -m "Release $VERSION" -m "Built from $REF ($SOURCE_SHA)."
+          git tag -a "$VERSION" -m "Beta $VERSION built from $REF ($SOURCE_SHA)"
+          git push origin "refs/tags/$VERSION"
+
+      - name: Create the integration zip
+        run: |
+          set -euo pipefail
+          cd "$INTEGRATION_DIR"
+          zip -r "$GITHUB_WORKSPACE/$ZIP_NAME" . -x '*__pycache__*'
+
+      - name: Publish the pre-release
+        env:
+          VERSION: ${{ inputs.version }}
+          REF: ${{ inputs.ref }}
+          SOURCE_SHA: ${{ steps.version.outputs.source_sha }}
+          LATEST: ${{ steps.version.outputs.latest }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          notes="$(cat <<EOF
+          > [!WARNING]
+          > **Beta for testing.** Built from \`$REF\` (\`$SOURCE_SHA\`).
+          > Read the upgrade notes in the README before installing on a configured unit.
+
+          ### How to test with HACS
+          1. Make pre-releases visible: **Settings → Devices & services → HACS**, open the *Sabiana Energy Smart* entry and enable its **Pre-release** switch entity (it is disabled by default).
+          2. **HACS → Sabiana Energy Smart → ⋮ → Redownload**, pick \`$VERSION\` and download.
+          3. Restart Home Assistant. **Settings → Devices & services → Sabiana Energy Smart** now shows version \`$VERSION\`.
+
+          To go back, redownload the previous stable version the same way.
+
+          When it works, run the **Stable release** workflow with \`beta_tag: $VERSION\`.
+          EOF
+          )"
+          args=(--verify-tag --prerelease --latest=false --title "$VERSION"
+                --generate-notes --notes "$notes")
+          if [ -n "$LATEST" ]; then
+            args+=(--notes-start-tag "$LATEST")
+          fi
+          gh release create "$VERSION" "$ZIP_NAME" "${args[@]}"
+
+      - name: Remove the tag if publishing failed
+        if: failure() && steps.tag.outcome == 'success'
+        env:
+          VERSION: ${{ inputs.version }}
+        run: git push origin --delete "refs/tags/$VERSION"
