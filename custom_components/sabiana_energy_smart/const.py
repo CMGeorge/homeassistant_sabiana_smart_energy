@@ -127,8 +127,8 @@ SENSOR_DEFINITIONS_NEW = {
         "key": "Rho1",
         "name": "Rho1 - V1 In (kg/m3)",
         "unit": "kg/m3",
-        "scale": 0.1,
-        "precision": 1,
+        # Raw IEEE float is already in kg/m3 (air ~1.2 kg/m3); no scaling.
+        "precision": 3,
         "type": "float32",
         # "device_class": "humidity",
         "readable": True,
@@ -137,8 +137,8 @@ SENSOR_DEFINITIONS_NEW = {
         "key": "Rho2",
         "name": "Rho2 - V1 Out (kg/m3)",
         "unit": "kg/m3",
-        "scale": 0.1,
-        "precision": 1,
+        # Raw IEEE float is already in kg/m3 (air ~1.2 kg/m3); no scaling.
+        "precision": 3,
         "type": "float32",
         # "device_class": "humidity",
         "readable": True,
@@ -147,8 +147,8 @@ SENSOR_DEFINITIONS_NEW = {
         "key": "Rho3",
         "name": "Rho3 - V2 In (kg/m3)",
         "unit": "kg/m3",
-        "scale": 0.1,
-        "precision": 1,
+        # Raw IEEE float is already in kg/m3 (air ~1.2 kg/m3); no scaling.
+        "precision": 3,
         "type": "float32",
         # "device_class": "humidity",
         "readable": True,
@@ -157,8 +157,8 @@ SENSOR_DEFINITIONS_NEW = {
         "key": "Rho4",
         "name": "Rho4 - V2 Out (kg/m3)",
         "unit": "kg/m3",
-        "scale": 0.1,
-        "precision": 1,
+        # Raw IEEE float is already in kg/m3 (air ~1.2 kg/m3); no scaling.
+        "precision": 3,
         "type": "float32",
         "readable": True,
     },
@@ -919,10 +919,37 @@ DIAGNOSTIC_DEFINITIONS = {
 }
 
 
-def get_device_info(entry_id: str):
+DEFAULT_DEVICE_NAME = "Sabiana RVU"
+
+
+def get_device_info(entry_id: str, name: str | None = None):
+    """Return device info for the device behind a config entry."""
     return {
         "identifiers": {(DOMAIN, entry_id)},
-        "name": "Sabiana RVU",
+        "name": name or DEFAULT_DEVICE_NAME,
         "manufacturer": "Sabiana",
         "model": "Smart Pro",
     }
+
+
+def get_polled_addresses() -> tuple[set[int], set[int]]:
+    """Return (addresses, float32 base addresses) read by the entities.
+
+    Used to pre-seed the coordinator so the first refresh, which runs before
+    the platforms are set up, already reads every register the entities need.
+    Button registers are write-only commands and are not polled.
+    """
+    addresses: set[int] = set()
+    float32_bases: set[int] = set()
+    for addr, reg in SENSOR_DEFINITIONS_NEW.items():
+        if reg.get("entity_type") in ("switch", "button"):
+            continue
+        if reg.get("type") == "float32":
+            float32_bases.add(addr)
+        else:
+            addresses.add(addr)
+    addresses.update(reg["address"] for reg in NUMBER_DEFINITIONS)
+    addresses.update(SWITCH_DEFINITIONS)
+    addresses.update(SELECT_DEFINITIONS)
+    addresses.update(DIAGNOSTIC_DEFINITIONS)
+    return addresses, float32_bases
