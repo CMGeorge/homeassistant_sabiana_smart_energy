@@ -7,6 +7,13 @@ CONF_SLAVE = "slave"
 
 LOGGER = logging.getLogger(__package__)
 
+# Block 8 (Time and Day). See helpers.py for the encoding.
+CLOCK_TIME_ADDRESS = 0x0800  # MSB = hour, LSB = minutes
+CLOCK_DAY_ADDRESS = 0x0801  # 1 = Monday ... 7 = Sunday
+# Re-sync the device clock when it is this many minutes (or more) off.
+# One minute of difference is normal: the unit does not expose seconds.
+CLOCK_SYNC_THRESHOLD_MINUTES = 2
+
 SENSOR_DEFINITIONS_NEW = {
     0x0100: {
         "key": "probe_temp1",

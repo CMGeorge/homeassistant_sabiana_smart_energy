@@ -18,6 +18,7 @@ This integration provides access to diagnostic data, environmental sensors, fan 
 - 💨 Fan control: speed settings, speed coefficients
 - 🧠 Diagnostic registers and status bits
 - 🛠️ Write support for supported registers (e.g. setpoint, thresholds)
+- 🕒 Device clock sync from Home Assistant (handles daylight saving time changes)
 - 🏠 Native integration with Home Assistant UI
 
 ---
@@ -70,6 +71,24 @@ The integration uses the UI (no YAML required). After install:
 - And many more...
 
 Entity categories (`diagnostic`, `config`) are used where appropriate.
+
+### 🕒 Device clock and daylight saving time
+
+The unit's clock only stores hour, minute and day of the week (registers
+`0x0800`/`0x0801`). It has no date, so it **cannot switch to/from daylight
+saving time by itself**, and weekly programs run one hour off after each DST
+change. The integration fixes this:
+
+- **Device clock** (diagnostic sensor): the unit's time, e.g. `Mon 14:05`, with
+  a `drift_minutes` attribute (difference from Home Assistant's local time).
+- **Sync clock with Home Assistant** (button): sets the unit to Home
+  Assistant's current local time and weekday.
+- **Automatic clock sync** (switch, on by default): every 5 minutes the unit's
+  clock is compared to Home Assistant's; if it is 2 or more minutes off (DST
+  change, drift, power cut) it is corrected automatically.
+
+If writing the clock fails, check that "Time/day change" is not blocked on the
+unit (blocked functions register `0x0226`, bit 5).
 
 ---
 

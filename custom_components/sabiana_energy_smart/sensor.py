@@ -18,11 +18,12 @@ from typing import Any
 from homeassistant.components.sensor import SensorEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.entity import DeviceInfo
+from homeassistant.helpers.entity import DeviceInfo, EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import DOMAIN, LOGGER, SENSOR_DEFINITIONS_NEW, get_device_info
+from .helpers import WEEKDAY_NAMES, format_device_clock
 
 # Build sensor definitions from the new structure
 SENSOR_DEFINITIONS = [
@@ -61,7 +62,44 @@ async def async_setup_entry(
     for sensor in sensors:
         LOGGER.debug("  • %s (address: 0x%04X)", sensor.name, sensor._address)
 
-    async_add_entities(sensors)
+    async_add_entities(
+        [*sensors, SabianaDeviceClockSensor(coordinator, entry.entry_id)]
+    )
+
+
+class SabianaDeviceClockSensor(CoordinatorEntity, SensorEntity):
+    """Clock of the unit (registers 0x0800/0x0801), e.g. 'Mon 14:05'.
+
+    The attribute drift_minutes shows how far it is from Home Assistant's
+    local time (positive = device ahead).
+    """
+
+    _attr_name = "Device clock"
+    _attr_unique_id = "sabiana_sensor_device_clock"
+    _attr_icon = "mdi:clock-outline"
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+
+    def __init__(self, coordinator, entry_id: str) -> None:
+        super().__init__(coordinator)
+        self._attr_device_info = DeviceInfo(**get_device_info(entry_id))
+
+    @property
+    def native_value(self) -> str | None:
+        clock = self.coordinator.device_clock
+        return format_device_clock(clock) if clock else None
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any] | None:
+        clock = self.coordinator.device_clock
+        if clock is None:
+            return None
+        day, hour, minute = clock
+        return {
+            "weekday": WEEKDAY_NAMES[day - 1],
+            "hour": hour,
+            "minute": minute,
+            "drift_minutes": self.coordinator.clock_drift(),
+        }
 
 
 class SabianaModbusSensor(CoordinatorEntity, SensorEntity):

@@ -1,3 +1,4 @@
+import inspect
 import logging
 
 from pymodbus.client import AsyncModbusTcpClient
@@ -77,11 +78,36 @@ class SabianaModbusClient:
 
         return False
 
+    async def write_registers(
+        self, address: int, values: list[int], slave: int = 1
+    ) -> bool:
+        """Write contiguous registers in one request (function 0x10)."""
+        if not await self.ensure_connected():
+            return False
+
+        try:
+            result = await self.client.write_registers(
+                address=address, values=values, device_id=slave
+            )
+            if result.isError():
+                _LOGGER.warning("Write failed at 0x%04X: %s", address, result)
+                return False
+            return True
+        except ModbusException as me:
+            _LOGGER.error("Modbus write error at 0x%04X: %s", address, me)
+        except Exception as e:
+            _LOGGER.error("Unexpected error writing 0x%04X: %s", address, e)
+
+        return False
+
     async def close(self) -> None:
         """Close the Modbus connection gracefully."""
         if self.client:
             try:
-                await self.client.close()
+                # close() is synchronous in pymodbus 3.x
+                result = self.client.close()
+                if inspect.isawaitable(result):
+                    await result
             except Exception as e:
                 _LOGGER.warning("Error while closing Modbus client: %s", e)
             finally:

@@ -3,7 +3,8 @@ from __future__ import annotations
 from homeassistant.components.button import ButtonEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.entity import DeviceInfo
+from homeassistant.exceptions import HomeAssistantError
+from homeassistant.helpers.entity import DeviceInfo, EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
@@ -32,6 +33,23 @@ class SabianaButton(CoordinatorEntity, ButtonEntity):
             )
 
 
+class SabianaSyncClockButton(CoordinatorEntity, ButtonEntity):
+    """Set the unit's clock to Home Assistant's local time and weekday."""
+
+    _attr_name = "Sync clock with Home Assistant"
+    _attr_unique_id = "sabiana_button_sync_clock"
+    _attr_icon = "mdi:clock-check-outline"
+    _attr_entity_category = EntityCategory.CONFIG
+
+    def __init__(self, coordinator, entry_id: str) -> None:
+        super().__init__(coordinator)
+        self._attr_device_info = DeviceInfo(**get_device_info(entry_id))
+
+    async def async_press(self) -> None:
+        if not await self.coordinator.async_sync_clock():
+            raise HomeAssistantError("Could not write the clock to the Sabiana unit")
+
+
 async def async_setup_entry(
     hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
 ):
@@ -45,6 +63,8 @@ async def async_setup_entry(
                     coordinator, {**props, "address": address}, entry.entry_id
                 )
             )
+
+    buttons.append(SabianaSyncClockButton(coordinator, entry.entry_id))
 
     LOGGER.debug("Adding %d buttons", len(buttons))
     async_add_entities(buttons)
