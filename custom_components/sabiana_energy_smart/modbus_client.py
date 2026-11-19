@@ -1,3 +1,8 @@
+"""Async Modbus TCP client wrapper for Sabiana devices."""
+
+from __future__ import annotations
+
+import inspect
 import logging
 
 from pymodbus.client import AsyncModbusTcpClient
@@ -13,9 +18,20 @@ class SabianaModbusClient:
         self.host = host
         self.port = port
         self.client: AsyncModbusTcpClient | None = None
+        self._closed = False
+
+    @property
+    def connected(self) -> bool:
+        """Return True if the underlying client is connected."""
+        return self.client is not None and bool(self.client.connected)
 
     async def ensure_connected(self) -> bool:
         """Ensure the Modbus client is connected, reconnect if needed."""
+        if self._closed:
+            # Never reopen a socket after close() (e.g. a refresh scheduled
+            # before the config entry was unloaded).
+            return False
+
         if self.client is None:
             self.client = AsyncModbusTcpClient(self.host, port=self.port)
 
@@ -47,11 +63,16 @@ class SabianaModbusClient:
                 address=address, count=count, device_id=slave
             )
             if result is None or result.isError():
-                _LOGGER.warning("Read failed at address 0x%04X", address)
+                _LOGGER.debug(
+                    "Read failed at address 0x%04X (count %d): %s",
+                    address,
+                    count,
+                    result,
+                )
                 return None
             return result.registers
         except ModbusException as me:
-            _LOGGER.error("Modbus protocol error at 0x%04X: %s", address, me)
+            _LOGGER.warning("Modbus protocol error at 0x%04X: %s", address, me)
         except Exception as e:
             _LOGGER.error("Unexpected error reading 0x%04X: %s", address, e)
 
@@ -66,7 +87,7 @@ class SabianaModbusClient:
             result = await self.client.write_register(
                 address=address, value=value, device_id=slave
             )
-            if result.isError():
+            if result is None or result.isError():
                 _LOGGER.warning("Write failed at 0x%04X: %s", address, result)
                 return False
             return True
@@ -78,10 +99,18 @@ class SabianaModbusClient:
         return False
 
     async def close(self) -> None:
-        """Close the Modbus connection gracefully."""
+        """Close the Modbus connection gracefully.
+
+        After close() the client refuses to reconnect.
+        """
+        self._closed = True
         if self.client:
             try:
-                await self.client.close()
+                # pymodbus 3.x close() is synchronous; older versions returned
+                # an awaitable. Support both.
+                result = self.client.close()
+                if inspect.isawaitable(result):
+                    await result
             except Exception as e:
                 _LOGGER.warning("Error while closing Modbus client: %s", e)
             finally:

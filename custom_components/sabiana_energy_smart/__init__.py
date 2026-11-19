@@ -12,11 +12,15 @@ The integration uses a coordinator pattern for efficient Modbus polling,
 registering only the addresses needed by active entities.
 """
 
+from __future__ import annotations
+
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, callback
+from homeassistant.exceptions import ConfigEntryNotReady
+from homeassistant.helpers import entity_registry as er
 
-from .const import DOMAIN, LOGGER
+from .const import DOMAIN, LOGGER, get_polled_addresses
 from .modbus_coordinator import SabianaModbusCoordinator
 
 PLATFORMS: list[Platform] = [
@@ -28,13 +32,17 @@ PLATFORMS: list[Platform] = [
     Platform.BUTTON,  # Mode activation buttons (Manual, Holiday, Party)
 ]
 
+# Unique IDs created before config entry version 1.2 were not scoped to the
+# config entry ("sabiana_sensor_probe_temp1"), so two units collided.
+LEGACY_UNIQUE_ID_PREFIX = "sabiana_"
+
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up Sabiana Energy Smart from a config entry.
 
     This function initializes the integration by:
     1. Creating a Modbus coordinator for communication
-    2. Establishing connection to the device
+    2. Establishing connection to the device (retried by HA if unreachable)
     3. Performing initial data fetch
     4. Setting up all platform entities (sensors, switches, etc.)
 
@@ -47,9 +55,25 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """
     LOGGER.debug("Initializing Sabiana integration")
 
-    coordinator = SabianaModbusCoordinator(hass, entry.data)
-    await coordinator.async_setup()
-    await coordinator.async_config_entry_first_refresh()
+    coordinator = SabianaModbusCoordinator(hass, entry.data, entry)
+    addresses, float32_bases = get_polled_addresses()
+    for address in addresses:
+        coordinator.register_address(address)
+    for address in float32_bases:
+        coordinator.register_float32(address)
+
+    if not await coordinator.async_setup():
+        await coordinator.async_close()
+        raise ConfigEntryNotReady(
+            f"Cannot connect to Sabiana unit at "
+            f"{entry.data['host']}:{entry.data['port']}"
+        )
+
+    try:
+        await coordinator.async_config_entry_first_refresh()
+    except Exception:
+        await coordinator.async_close()
+        raise
 
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = coordinator
 
@@ -63,8 +87,8 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload a config entry.
 
     Cleanly shuts down the integration by:
-    1. Removing the coordinator from hass.data
-    2. Unloading all platform entities
+    1. Unloading all platform entities
+    2. Removing the coordinator from hass.data (only if unload succeeded)
     3. Closing the Modbus connection
 
     Args:
@@ -74,7 +98,46 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     Returns:
         bool: True if unload was successful
     """
-    coordinator = hass.data[DOMAIN].pop(entry.entry_id)
     unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
-    await coordinator.async_close()
+    if unload_ok:
+        coordinator = hass.data[DOMAIN].pop(entry.entry_id)
+        await coordinator.async_close()
     return unload_ok
+
+
+async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+    """Migrate old config entries.
+
+    1.1 -> 1.2: prefix entity unique IDs with the config entry ID so several
+    units can be configured. Entity IDs, names and history are preserved.
+    """
+    LOGGER.debug(
+        "Migrating config entry %s from version %s.%s",
+        entry.entry_id,
+        entry.version,
+        entry.minor_version,
+    )
+
+    if entry.version > 1:
+        # Downgraded from a future major version.
+        return False
+
+    if entry.version == 1 and entry.minor_version < 2:
+        prefix = f"{entry.entry_id}_"
+
+        @callback
+        def _migrate_unique_id(
+            entity_entry: er.RegistryEntry,
+        ) -> dict[str, str] | None:
+            unique_id = entity_entry.unique_id
+            if unique_id.startswith(LEGACY_UNIQUE_ID_PREFIX):
+                return {"new_unique_id": f"{prefix}{unique_id}"}
+            return None
+
+        await er.async_migrate_entries(hass, entry.entry_id, _migrate_unique_id)
+        hass.config_entries.async_update_entry(entry, version=1, minor_version=2)
+        LOGGER.info(
+            "Migrated Sabiana entity unique IDs for config entry %s", entry.entry_id
+        )
+
+    return True

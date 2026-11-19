@@ -73,6 +73,40 @@ Entity categories (`diagnostic`, `config`) are used where appropriate.
 
 ---
 
+## ⚠️ Upgrade notes
+
+### 1.1.0
+
+This release changes behavior for **already-configured devices**. Read before
+upgrading:
+
+- **Entity unique IDs are migrated automatically.** They now include the config
+  entry ID so you can add more than one unit. Entity IDs, names, history and
+  customizations are kept. **Downgrading** to 1.0.x afterwards creates
+  duplicate entities. Back up first if you might roll back.
+- **Device name** changes from "Sabiana RVU" to the name you entered during
+  setup (default "Sabiana HRV"). A name you set yourself in the UI is kept, and
+  entity IDs don't change.
+- **Offline unit → entities show `unavailable`** (previously `unknown`). Update
+  automations or templates that check for `unknown`.
+- **Unit offline when Home Assistant starts → setup is retried**
+  ("Retrying setup") instead of loading with empty entities.
+- **Failed writes now raise an error.** Changing a number, select or switch, or
+  pressing a button while the unit is unreachable or rejects the value shows an
+  error and stops the automation. Use `continue_on_error: true` if you want
+  the old behavior.
+- **Polling reads registers in blocks** (fewer, larger Modbus requests). If
+  your unit rejects a block, the integration falls back to one-by-one reads.
+- **Rho1–Rho4 air density sensors** now show 3 decimals (e.g. `1.204` instead
+  of `1.2`). The value itself is unchanged.
+- Number entities on 0.1-resolution registers (RH limits, temperature
+  setpoints and offsets) can now be set in 0.1 steps.
+- New setups test the connection before the entry is created.
+- Requires `pymodbus>=3.10.0` (bundled with every supported Home Assistant
+  release).
+
+---
+
 ## 🧑‍💻 Development / Contribute
 
 You're welcome to open issues, pull requests, or discussions!

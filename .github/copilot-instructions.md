@@ -13,7 +13,7 @@ Always reference these instructions first and fallback to search or bash command
 - Install Python 3.12+ (required for Home Assistant 2024.1+)
 - Install development dependencies:
   ```bash
-  python3 -m pip install ruff yamllint pymodbus>=3.0.0
+  python3 -m pip install ruff yamllint pymodbus>=3.10.0
   ```
 - NEVER CANCEL: Package installation can take 2-5 minutes depending on dependencies.
 
@@ -231,7 +231,7 @@ To use the devcontainer:
 ### Full development workflow from fresh clone:
 ```bash
 # 1. Install dependencies (NEVER CANCEL - takes 1-3 minutes)
-python3 -m pip install ruff yamllint pymodbus>=3.0.0 pytest pytest-cov voluptuous
+python3 -m pip install ruff yamllint pymodbus>=3.10.0 pytest pytest-cov voluptuous
 
 # 2. Run full validation (takes <1 second)
 python3 -m ruff check .
