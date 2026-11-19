@@ -93,10 +93,10 @@ Handles the user configuration step.
 **Form Schema:**
 ```python
 {
-    CONF_NAME: str,           # Device friendly name (default: "Sabiana HRV")
-    CONF_HOST: str,           # IP address or hostname
-    CONF_PORT: int,           # Modbus TCP port (default: 502)
-    CONF_SLAVE: int,          # Modbus slave/unit ID (default: 1)
+    CONF_NAME: str,  # Device friendly name (default: "Sabiana HRV")
+    CONF_HOST: str,  # IP address or hostname
+    CONF_PORT: int,  # Modbus TCP port (default: 502)
+    CONF_SLAVE: int,  # Modbus slave/unit ID (default: 1)
 }
 ```
 
@@ -111,12 +111,9 @@ result = await flow.async_step_user(None)
 # Shows configuration form
 
 # After user submits (user_input contains data)
-result = await flow.async_step_user({
-    "name": "Living Room HRV",
-    "host": "192.168.1.100",
-    "port": 502,
-    "slave": 1
-})
+result = await flow.async_step_user(
+    {"name": "Living Room HRV", "host": "192.168.1.100", "port": 502, "slave": 1}
+)
 # Creates config entry
 ```
 
@@ -152,11 +149,9 @@ Initialize the coordinator.
 
 **Example:**
 ```python
-coordinator = SabianaModbusCoordinator(hass, {
-    "host": "192.168.1.100",
-    "port": 502,
-    "slave": 1
-})
+coordinator = SabianaModbusCoordinator(
+    hass, {"host": "192.168.1.100", "port": 502, "slave": 1}
+)
 ```
 
 ---
@@ -385,14 +380,14 @@ Initialize sensor entity.
 **Register Definition Schema:**
 ```python
 {
-    "address": int,           # Modbus address
-    "key": str,              # Unique identifier
-    "name": str,             # Display name
-    "unit": str,             # Unit of measurement
-    "scale": float,          # Scaling factor
-    "precision": int,        # Decimal places
-    "device_class": str,     # HA device class (optional)
-    "type": str,             # Data type (default: "uint16")
+    "address": int,  # Modbus address
+    "key": str,  # Unique identifier
+    "name": str,  # Display name
+    "unit": str,  # Unit of measurement
+    "scale": float,  # Scaling factor
+    "precision": int,  # Decimal places
+    "device_class": str,  # HA device class (optional)
+    "type": str,  # Data type (default: "uint16")
 }
 ```
 
@@ -460,7 +455,7 @@ sensor = SabianaBinarySensor(
     key="on_status",
     name="Unit ON",
     entry_id=entry.entry_id,
-    entity_category=None
+    entity_category=None,
 )
 ```
 
@@ -655,8 +650,8 @@ decode_modbus_value([0x4142, 0x4344], "char", 2, 1, 0)  # Returns: "ABCD"
 #### Configuration Constants
 
 ```python
-DOMAIN = "sabiana_energy_smart"      # Integration domain
-CONF_SLAVE = "slave"                 # Config key for Modbus slave ID
+DOMAIN = "sabiana_energy_smart"  # Integration domain
+CONF_SLAVE = "slave"  # Config key for Modbus slave ID
 ```
 
 #### Device Information
@@ -771,7 +766,7 @@ def scaled_to_raw(value: float, scale: float) -> int:
 def twos_complement(value: int, bits: int = 16) -> int:
     """Convert unsigned int to signed int using two's complement."""
     if value >= 2 ** (bits - 1):
-        return value - 2 ** bits
+        return value - 2**bits
     return value
 ```
 
@@ -781,10 +776,11 @@ def twos_complement(value: int, bits: int = 16) -> int:
 def decode_float32(registers: list[int]) -> float:
     """Decode IEEE 754 float32 from two registers."""
     import struct
+
     # Combine two 16-bit registers into one 32-bit value
     combined = (registers[0] << 16) | registers[1]
     # Unpack as float
-    return struct.unpack('>f', struct.pack('>I', combined))[0]
+    return struct.unpack(">f", struct.pack(">I", combined))[0]
 ```
 
 ---

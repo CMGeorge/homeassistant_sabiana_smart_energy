@@ -3,6 +3,7 @@
 Handles the UI-based setup flow for adding Sabiana devices to Home Assistant.
 Users provide connection details (host, port, slave ID) through a form.
 """
+
 from __future__ import annotations
 
 from homeassistant import config_entries

@@ -11,6 +11,7 @@ via Modbus (TCP/RTU) communication. It enables monitoring and control of:
 The integration uses a coordinator pattern for efficient Modbus polling,
 registering only the addresses needed by active entities.
 """
+
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant

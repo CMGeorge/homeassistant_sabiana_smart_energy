@@ -11,6 +11,7 @@ This module provides sensor entities for monitoring Sabiana device readings incl
 All sensors automatically scale raw Modbus values and provide appropriate units
 and device classes for Home Assistant integration.
 """
+
 from __future__ import annotations
 
 from typing import Any
