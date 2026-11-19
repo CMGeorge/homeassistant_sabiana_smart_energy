@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from datetime import timedelta
+from datetime import datetime, timedelta
 from typing import Any
 
 from homeassistant.config_entries import ConfigEntry
@@ -14,9 +14,22 @@ from homeassistant.helpers.update_coordinator import (
     DataUpdateCoordinator,
     UpdateFailed,
 )
+from homeassistant.util import dt as dt_util
 
-from .const import LOGGER
-from .helpers import group_contiguous
+from .const import (
+    BLOCKED_FUNCTIONS_ADDRESS,
+    CLOCK_DAY_ADDRESS,
+    CLOCK_SYNC_THRESHOLD_MINUTES,
+    CLOCK_TIME_ADDRESS,
+    LOGGER,
+)
+from .helpers import (
+    clock_drift_minutes,
+    decode_device_clock,
+    encode_device_clock,
+    format_device_clock,
+    group_contiguous,
+)
 from .modbus_client import SabianaModbusClient
 
 VERIFY_DELAY = 1.0
@@ -48,6 +61,9 @@ class SabianaModbusCoordinator(DataUpdateCoordinator[dict[int, int | None]]):
         # Blocks the device refused to return in one request; read them
         # register by register from then on.
         self._split_blocks: set[tuple[int, int]] = set()
+        # Set by the "Automatic clock sync" switch once its state is restored.
+        # None means "not known yet": no automatic writes until then.
+        self.clock_auto_sync: bool | None = None
 
     def register_address(self, address: int) -> None:
         """Register a Modbus address to be polled."""
@@ -101,10 +117,43 @@ class SabianaModbusCoordinator(DataUpdateCoordinator[dict[int, int | None]]):
                 f"Failed to write value {value} to register 0x{address:04X} "
                 f"on {self._host}:{self._port}"
             )
+        self._apply_written_values(address, [value])
 
+    async def async_write_registers(self, address: int, values: list[int]) -> None:
+        """Write contiguous registers in one request (FC16).
+
+        Falls back to one FC6 write per register if the device rejects FC16.
+        Raises HomeAssistantError on failure.
+        """
+        ok = await self._client.write_registers(
+            address=address, values=values, slave=self._slave
+        )
+        if not ok and self._client.connected:
+            LOGGER.debug(
+                "Multi-register write at 0x%04X rejected; writing one by one",
+                address,
+            )
+            ok = True
+            for offset, value in enumerate(values):
+                if not await self._client.write_register(
+                    address=address + offset, value=value, slave=self._slave
+                ):
+                    ok = False
+                    break
+        if not ok:
+            raise HomeAssistantError(
+                f"Failed to write {values} to registers starting at "
+                f"0x{address:04X} on {self._host}:{self._port}"
+            )
+        self._apply_written_values(address, values)
+
+    @callback
+    def _apply_written_values(self, address: int, values: list[int]) -> None:
+        """Reflect written values immediately, then re-read from the device."""
         # Optimistic update for snappy UI
         new_data = dict(self.data or {})
-        new_data[address] = value
+        for offset, value in enumerate(values):
+            new_data[address + offset] = value
         self.async_set_updated_data(new_data)
 
         # Verify shortly after (device may clamp/adjust value)
@@ -119,6 +168,69 @@ class SabianaModbusCoordinator(DataUpdateCoordinator[dict[int, int | None]]):
         """Request a refresh after a write."""
         self._cancel_verify = None
         self.hass.async_create_task(self.async_request_refresh())
+
+    # --- Device clock ---------------------------------------------------------
+
+    @property
+    def device_clock(self) -> tuple[int, int, int] | None:
+        """Return the device clock as (isoweekday, hour, minute), if known."""
+        data = self.data or {}
+        return decode_device_clock(
+            data.get(CLOCK_TIME_ADDRESS), data.get(CLOCK_DAY_ADDRESS)
+        )
+
+    def clock_drift(self, now: datetime | None = None) -> int | None:
+        """Return how many minutes the device clock is ahead of Home Assistant."""
+        device = self.device_clock
+        if device is None:
+            return None
+        now = now or dt_util.now()
+        return clock_drift_minutes(device, (now.isoweekday(), now.hour, now.minute))
+
+    async def async_sync_clock(self, now: datetime | None = None) -> None:
+        """Set the device clock to Home Assistant's local time and weekday.
+
+        The unit has no calendar or DST rules, so this is what keeps it right
+        after daylight saving time changes. Raises HomeAssistantError on failure.
+        """
+        now = now or dt_util.now()
+        values = encode_device_clock(now.hour, now.minute, now.isoweekday())
+        try:
+            await self.async_write_registers(CLOCK_TIME_ADDRESS, values)
+        except HomeAssistantError as err:
+            raise HomeAssistantError(
+                f"{err}. If this keeps failing, check that 'Time/day change' is "
+                f"not blocked on the unit (register 0x{BLOCKED_FUNCTIONS_ADDRESS:04X}"
+                ", bit 5)"
+            ) from err
+        LOGGER.info(
+            "Device clock set to %s",
+            format_device_clock((now.isoweekday(), now.hour, now.minute)),
+        )
+
+    async def async_check_clock(self, now: datetime | None = None) -> None:
+        """Re-sync the device clock if automatic sync is on and it has drifted.
+
+        Runs from a timer, so failures are logged instead of raised.
+        """
+        if not self.clock_auto_sync:
+            return
+        now = now or dt_util.now()
+        drift = self.clock_drift(now)
+        if drift is None:
+            LOGGER.debug("Device clock not read yet, skipping clock check")
+            return
+        if abs(drift) < CLOCK_SYNC_THRESHOLD_MINUTES:
+            return
+        LOGGER.info(
+            "Device clock is %s (%+d min vs Home Assistant), syncing",
+            format_device_clock(self.device_clock),
+            drift,
+        )
+        try:
+            await self.async_sync_clock(now)
+        except HomeAssistantError as err:
+            LOGGER.warning("Automatic clock sync failed: %s", err)
 
     async def _async_update_data(self) -> dict[int, int | None]:
         """Poll the registered Modbus addresses in contiguous blocks."""

@@ -7,6 +7,15 @@ CONF_SLAVE = "slave"
 
 LOGGER = logging.getLogger(__package__)
 
+# Block 8 (Time and Day). See helpers.py for the encoding.
+CLOCK_TIME_ADDRESS = 0x0800  # MSB = hour, LSB = minutes
+CLOCK_DAY_ADDRESS = 0x0801  # 1 = Monday ... 7 = Sunday
+# Re-sync the device clock when it is this many minutes (or more) off.
+# One minute of difference is normal: the unit does not expose seconds.
+CLOCK_SYNC_THRESHOLD_MINUTES = 2
+# Blocked functions register: bit 5 locks time/day changes on the unit.
+BLOCKED_FUNCTIONS_ADDRESS = 0x0226
+
 SENSOR_DEFINITIONS_NEW = {
     0x0100: {
         "key": "probe_temp1",
@@ -952,4 +961,6 @@ def get_polled_addresses() -> tuple[set[int], set[int]]:
     addresses.update(SWITCH_DEFINITIONS)
     addresses.update(SELECT_DEFINITIONS)
     addresses.update(DIAGNOSTIC_DEFINITIONS)
+    # Device clock (read together in one request: the addresses are adjacent)
+    addresses.update((CLOCK_TIME_ADDRESS, CLOCK_DAY_ADDRESS))
     return addresses, float32_bases

@@ -18,6 +18,7 @@ This integration provides access to diagnostic data, environmental sensors, fan 
 - 💨 Fan control: speed settings, speed coefficients
 - 🧠 Diagnostic registers and status bits
 - 🛠️ Write support for supported registers (e.g. setpoint, thresholds)
+- 🕒 Device clock sync from Home Assistant (handles daylight saving time changes)
 - 🏠 Native integration with Home Assistant UI
 
 ---
@@ -73,6 +74,28 @@ Entity categories (`diagnostic`, `config`) are used where appropriate.
 
 ---
 
+### 🕒 Device clock and daylight saving time
+
+The unit's clock only stores hour, minute and day of the week (registers
+`0x0800`/`0x0801`). It has no date, so it **cannot switch to or from daylight
+saving time by itself**, and weekly timer programs run an hour off after each
+DST change. The integration handles this:
+
+- **Device clock** (diagnostic sensor): the unit's time, e.g. `Mon 14:05`, with
+  a `drift_minutes` attribute (difference from Home Assistant's local time;
+  positive = unit ahead).
+- **Sync clock with Home Assistant** (button): sets the unit to Home
+  Assistant's current local time and weekday.
+- **Automatic clock sync** (switch, on by default): every 5 minutes the unit's
+  clock is compared with Home Assistant's. If it's 2 or more minutes off (DST
+  change, drift, power cut), it's corrected automatically. One minute of
+  difference is normal, because the unit doesn't keep seconds.
+
+If writing the clock fails, check that "Time/day change" isn't blocked on the
+unit (blocked-functions register `0x0226`, bit 5).
+
+---
+
 ## ⚠️ Upgrade notes
 
 ### 1.1.0
@@ -104,6 +127,14 @@ upgrading:
 - New setups test the connection before the entry is created.
 - Requires `pymodbus>=3.10.0` (bundled with every supported Home Assistant
   release).
+- **New device clock entities:** *Device clock* (sensor), *Sync clock with Home
+  Assistant* (button) and *Automatic clock sync* (switch). See
+  [Device clock and daylight saving time](#-device-clock-and-daylight-saving-time).
+- **Automatic clock sync is on by default.** Home Assistant now **writes the
+  unit's clock** whenever it's 2 or more minutes off Home Assistant's local
+  time, for example right after upgrading if the unit is still on summer time,
+  and after every DST change. Turn the *Automatic clock sync* switch off to keep
+  the unit's own time.
 
 ---
 

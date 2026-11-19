@@ -128,6 +128,20 @@ The integration uses Home Assistant's `DataUpdateCoordinator` pattern:
 | 0x0303 | Party Mode | - | Activate party mode |
 | 0x0307 | Operating Mode | 0-4 | 0=Holiday, 1=Auto, 2=Program, 3=Manual, 4=Party |
 
+### Time and Day (Read/Write, Block 8)
+
+| Address | Name | Encoding | Description |
+|---------|------|----------|-------------|
+| 0x0800 | Time | MSB = hour (0-23), LSB = minutes (0-59) | Device clock |
+| 0x0801 | Day | 1 = Monday ... 7 = Sunday | Day of week |
+
+Both registers are written together with function 0x10 (write multiple
+registers), falling back to two 0x06 writes if the unit rejects 0x10. The unit
+has no calendar date and no DST rules, so the integration keeps it in sync with
+Home Assistant's local time (`async_check_clock` in `modbus_coordinator.py`,
+run every 5 minutes while the "Automatic clock sync" switch is on). Bit 5 of
+`0x0226` (blocked functions) can lock time/day changes.
+
 ### Diagnostic Registers (Read-Only, Bit-Mapped)
 
 | Address | Bit | Name | Description |
