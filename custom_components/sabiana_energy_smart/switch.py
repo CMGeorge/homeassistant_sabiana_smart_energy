@@ -4,9 +4,11 @@ from __future__ import annotations
 
 from homeassistant.components.switch import SwitchEntity
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import STATE_OFF
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.entity import DeviceInfo
+from homeassistant.helpers.entity import DeviceInfo, EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.restore_state import RestoreEntity
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import DOMAIN, LOGGER, SWITCH_DEFINITIONS, get_device_info
@@ -58,6 +60,46 @@ class SabianaSwitch(CoordinatorEntity, SwitchEntity):
         await self._async_write_state(False)
 
 
+class SabianaClockAutoSyncSwitch(SwitchEntity, RestoreEntity):
+    """Keep the unit's clock in sync with Home Assistant (incl. DST changes).
+
+    This is a Home Assistant side setting (nothing is stored on the unit).
+    It is on by default and its state survives restarts.
+    """
+
+    _attr_name = "Automatic clock sync"
+    _attr_icon = "mdi:clock-sync"
+    _attr_entity_category = EntityCategory.CONFIG
+
+    def __init__(self, coordinator, entry: ConfigEntry) -> None:
+        self.coordinator = coordinator
+        self._attr_unique_id = f"{entry.entry_id}_sabiana_switch_clock_auto_sync"
+        self._attr_device_info = DeviceInfo(
+            **get_device_info(entry.entry_id, entry.title)
+        )
+
+    async def async_added_to_hass(self) -> None:
+        await super().async_added_to_hass()
+        last_state = await self.async_get_last_state()
+        enabled = last_state is None or last_state.state != STATE_OFF
+        self.coordinator.clock_auto_sync = enabled
+        if enabled:
+            self.hass.async_create_task(self.coordinator.async_check_clock())
+
+    @property
+    def is_on(self) -> bool:
+        return bool(self.coordinator.clock_auto_sync)
+
+    async def async_turn_on(self, **kwargs) -> None:
+        self.coordinator.clock_auto_sync = True
+        self.async_write_ha_state()
+        await self.coordinator.async_check_clock()
+
+    async def async_turn_off(self, **kwargs) -> None:
+        self.coordinator.clock_auto_sync = False
+        self.async_write_ha_state()
+
+
 async def async_setup_entry(
     hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
 ):
@@ -70,6 +112,8 @@ async def async_setup_entry(
             switches.append(
                 SabianaSwitch(coordinator, {**props, "address": address}, entry)
             )
+
+    switches.append(SabianaClockAutoSyncSwitch(coordinator, entry))
 
     LOGGER.debug("Adding %d switches", len(switches))
     async_add_entities(switches)

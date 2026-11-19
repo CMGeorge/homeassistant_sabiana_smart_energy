@@ -19,6 +19,7 @@ from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers import entity_registry as er
+from homeassistant.helpers.event import async_track_time_change
 
 from .const import DOMAIN, LOGGER, get_polled_addresses
 from .modbus_coordinator import SabianaModbusCoordinator
@@ -78,6 +79,18 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = coordinator
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+
+    # The unit only knows hour/minute/weekday (no date, no DST rules), so it
+    # never adjusts for daylight saving time by itself. Every 5 minutes compare
+    # it with Home Assistant's local time and correct it if it has drifted
+    # (only while the "Automatic clock sync" switch is on). Running just after
+    # the minute rolls over keeps the written time accurate to a few seconds.
+    async def _async_check_clock(now) -> None:
+        await coordinator.async_check_clock(now)
+
+    entry.async_on_unload(
+        async_track_time_change(hass, _async_check_clock, minute="/5", second=2)
+    )
 
     LOGGER.info("Sabiana Energy Smart integration initialized successfully")
     return True
