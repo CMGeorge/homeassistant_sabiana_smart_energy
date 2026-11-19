@@ -11,8 +11,11 @@ This module provides sensor entities for monitoring Sabiana device readings incl
 All sensors automatically scale raw Modbus values and provide appropriate units
 and device classes for Home Assistant integration.
 """
+
 from __future__ import annotations
 
+import math
+import struct
 from typing import Any
 
 from homeassistant.components.sensor import SensorEntity
@@ -51,11 +54,12 @@ async def async_setup_entry(
     coordinator = hass.data[DOMAIN][entry.entry_id]
     sensors = []
     for definition in SENSOR_DEFINITIONS:
-        coordinator.register_address(definition["address"])
         if definition.get("type") == "float32":
-            # For float32, we need to register both high and low addresses
-            coordinator.register_address(definition["address"] + 1)
-        sensors.append(SabianaModbusSensor(coordinator, definition, entry.entry_id))
+            # Both words of a float32 are read in the same Modbus request
+            coordinator.register_float32(definition["address"])
+        else:
+            coordinator.register_address(definition["address"])
+        sensors.append(SabianaModbusSensor(coordinator, definition, entry))
 
     LOGGER.debug("Adding %d Sabiana sensors", len(sensors))
     for sensor in sensors:
@@ -85,14 +89,14 @@ class SabianaModbusSensor(CoordinatorEntity, SensorEntity):
         self,
         coordinator: CoordinatorEntity,
         reg: dict[str, Any],
-        entry_id: str,
+        entry: ConfigEntry,
     ):
         """Initialize a Sabiana sensor entity.
 
         Args:
             coordinator: Modbus coordinator for data updates
             reg: Register definition dict containing address, scale, unit, etc.
-            entry_id: Config entry ID for device info linkage
+            entry: Config entry for unique ID and device info linkage
         """
         super().__init__(coordinator)
         self._address = reg["address"]
@@ -102,9 +106,12 @@ class SabianaModbusSensor(CoordinatorEntity, SensorEntity):
         self._attr_name = reg["name"]
         self._attr_native_unit_of_measurement = reg.get("unit")
         self._attr_device_class = reg.get("device_class")
-        self._attr_unique_id = f"sabiana_sensor_{reg['key']}"
+        self._attr_unique_id = f"{entry.entry_id}_sabiana_sensor_{reg['key']}"
         self._type = reg.get("type", "uint16")
-        self._attr_device_info = DeviceInfo(**get_device_info(entry_id))
+        self._unit = reg.get("unit")
+        self._attr_device_info = DeviceInfo(
+            **get_device_info(entry.entry_id, entry.title)
+        )
 
         LOGGER.debug(
             "Initialized sensor %s (unique_id=%s) at address 0x%04X",
@@ -129,8 +136,6 @@ class SabianaModbusSensor(CoordinatorEntity, SensorEntity):
                 )
                 return None
 
-            import struct
-
             try:
                 combined_bytes = struct.pack(">HH", raw_hi, raw_lo)
                 value = struct.unpack(">f", combined_bytes)[0]
@@ -138,7 +143,19 @@ class SabianaModbusSensor(CoordinatorEntity, SensorEntity):
                 LOGGER.warning("Failed to decode float32 for %s: %s", self.name, e)
                 return None
 
+            if not math.isfinite(value):
+                LOGGER.debug("%s: float32 value is not finite", self.name)
+                return None
+
+            # float32 registers carry the value in engineering units already,
+            # so no scale is applied.
             scaled = round(value, self._precision)
+            if self._unit == "kg/m3" and not 0.5 <= value <= 2.0:
+                LOGGER.debug(
+                    "%s: air density %s kg/m3 is outside the plausible range",
+                    self.name,
+                    value,
+                )
             LOGGER.debug(
                 "%s: raw float32=(%s, %s) → %s", self.name, raw_hi, raw_lo, scaled
             )

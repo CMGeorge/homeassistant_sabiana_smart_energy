@@ -1,3 +1,5 @@
+"""Binary sensor platform for Sabiana Smart Energy (status, alarm and config bits)."""
+
 from __future__ import annotations
 
 import logging
@@ -38,7 +40,7 @@ async def async_setup_entry(
                     bit_num=bit_num,
                     key=bit_def["key"],
                     name=bit_def["name"],
-                    entry_id=entry.entry_id,
+                    entry=entry,
                     entity_category=entity_category,
                 )
             )
@@ -57,7 +59,7 @@ class SabianaBinarySensor(CoordinatorEntity, BinarySensorEntity):
         bit_num: int,
         key: str,
         name: str,
-        entry_id: str,
+        entry: ConfigEntry,
         entity_category=None,
     ):
         super().__init__(coordinator)
@@ -65,8 +67,10 @@ class SabianaBinarySensor(CoordinatorEntity, BinarySensorEntity):
         self._bit_num = bit_num
 
         self._attr_name = name
-        self._attr_unique_id = f"sabiana_bin_{key}"
-        self._attr_device_info = DeviceInfo(**get_device_info(entry_id))
+        self._attr_unique_id = f"{entry.entry_id}_sabiana_bin_{key}"
+        self._attr_device_info = DeviceInfo(
+            **get_device_info(entry.entry_id, entry.title)
+        )
         self._attr_entity_category = entity_category
         _LOGGER.debug(
             "Initialized binary sensor %s (bit %d @ 0x%04X)", name, bit_num, address
@@ -93,7 +97,10 @@ class SabianaBinarySensor(CoordinatorEntity, BinarySensorEntity):
             )
             return bit_value
 
-        # Apply global inversion if flag is set
+        # Apply global inversion if flag is set.
+        # NOTE: this flips every bit-mapped sensor (alarms, relays, inputs).
+        # The exact scope of CFG_Inverted has not been verified against the
+        # Sabiana Modbus map; kept as-is to avoid changing reported states.
         inversion = self.coordinator.data.get(INVERSION_FLAG_ADDRESS)
         if inversion is not None and (inversion & 0x01):
             bit_value = not bit_value

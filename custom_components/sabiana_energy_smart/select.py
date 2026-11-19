@@ -1,3 +1,5 @@
+"""Select platform for Sabiana Smart Energy (speed level, program, mode)."""
+
 from __future__ import annotations
 
 from typing import Any
@@ -5,6 +7,7 @@ from typing import Any
 from homeassistant.components.select import SelectEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
@@ -35,7 +38,7 @@ async def async_setup_entry(
                     coordinator=coordinator,
                     reg=reg,
                     address=addr,
-                    entry_id=entry.entry_id,
+                    entry=entry,
                 )
             )
 
@@ -51,7 +54,7 @@ class SabianaModbusSelect(CoordinatorEntity, SelectEntity):
         coordinator: CoordinatorEntity,
         reg: dict[str, Any],
         address: int,
-        entry_id: str,
+        entry: ConfigEntry,
     ):
         super().__init__(coordinator)
         self._address = address
@@ -59,9 +62,11 @@ class SabianaModbusSelect(CoordinatorEntity, SelectEntity):
         self._reverse_map = {v: k for k, v in self._options_map.items()}
 
         self._attr_name = reg["name"]
-        self._attr_unique_id = f"sabiana_select_{reg['key']}"
+        self._attr_unique_id = f"{entry.entry_id}_sabiana_select_{reg['key']}"
         self._attr_options = list(self._reverse_map.keys())
-        self._attr_device_info = DeviceInfo(**get_device_info(entry_id))
+        self._attr_device_info = DeviceInfo(
+            **get_device_info(entry.entry_id, entry.title)
+        )
 
         LOGGER.debug(
             "Initialized select '%s' with options: %s",
@@ -82,21 +87,15 @@ class SabianaModbusSelect(CoordinatorEntity, SelectEntity):
         return label
 
     async def async_select_option(self, option: str) -> None:
+        """Write the option; raises HomeAssistantError if the write fails."""
         if option not in self._reverse_map:
-            LOGGER.warning("Invalid selection '%s' for %s", option, self.name)
-            return
+            raise ServiceValidationError(f"Invalid option '{option}' for {self.name}")
 
         value = self._reverse_map[option]
-        try:
-            ok = await self.coordinator.async_write_register(self._address, value)
-            if ok:
-                LOGGER.debug(
-                    "Wrote value %d to 0x%04X for option '%s'",
-                    value,
-                    self._address,
-                    option,
-                )
-        except Exception as err:
-            LOGGER.error(
-                "Failed to write option '%s' → 0x%04X: %s", option, self._address, err
-            )
+        await self.coordinator.async_write_register(self._address, value)
+        LOGGER.debug(
+            "Wrote value %d to 0x%04X for option '%s'",
+            value,
+            self._address,
+            option,
+        )
