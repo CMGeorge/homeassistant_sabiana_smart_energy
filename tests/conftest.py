@@ -1,6 +1,18 @@
 """Test configuration and pytest fixtures for Sabiana Energy Smart integration."""
 
+import importlib.util
+
 import pytest
+
+# These tests import the integration, so they need Home Assistant and pymodbus
+# (`pip install -r requirements.txt`, Python 3.13+). CI installs only
+# requirements-dev.txt, so they are skipped there.
+collect_ignore = (
+    []
+    if importlib.util.find_spec("homeassistant")
+    and importlib.util.find_spec("pymodbus")
+    else ["test_modbus_polling.py"]
+)
 
 
 @pytest.fixture

@@ -21,6 +21,12 @@ from .const import (
     CLOCK_DAY_ADDRESS,
     CLOCK_SYNC_THRESHOLD_MINUTES,
     CLOCK_TIME_ADDRESS,
+    CONF_RETRIES,
+    CONF_SCAN_INTERVAL,
+    CONF_TIMEOUT,
+    DEFAULT_RETRIES,
+    DEFAULT_SCAN_INTERVAL,
+    DEFAULT_TIMEOUT,
     LOGGER,
 )
 from .helpers import (
@@ -30,7 +36,7 @@ from .helpers import (
     format_device_clock,
     group_contiguous,
 )
-from .modbus_client import SabianaModbusClient
+from .modbus_client import SabianaCommunicationError, SabianaModbusClient
 
 VERIFY_DELAY = 1.0
 
@@ -44,22 +50,31 @@ class SabianaModbusCoordinator(DataUpdateCoordinator[dict[int, int | None]]):
         config: dict[str, Any],
         config_entry: ConfigEntry | None = None,
     ) -> None:
+        options = config_entry.options if config_entry is not None else {}
         super().__init__(
             hass,
             LOGGER,
             config_entry=config_entry,
             name="Sabiana Modbus Coordinator",
-            update_interval=timedelta(seconds=3),
+            update_interval=timedelta(
+                seconds=options.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
+            ),
         )
         self._host = config["host"]
         self._port = config["port"]
         self._slave = config["slave"]
-        self._client = SabianaModbusClient(self._host, self._port)
+        self._client = SabianaModbusClient(
+            self._host,
+            self._port,
+            timeout=options.get(CONF_TIMEOUT, DEFAULT_TIMEOUT),
+            retries=options.get(CONF_RETRIES, DEFAULT_RETRIES),
+        )
         self._active_addresses: set[int] = set()
         self._float32_bases: set[int] = set()
         self._cancel_verify: Callable[[], None] | None = None
-        # Blocks the device refused to return in one request; read them
-        # register by register from then on.
+        # Blocks the device refused (exception response) in one request; read
+        # them register by register from then on. A timeout never lands here:
+        # it says nothing about the block, only that the unit did not answer.
         self._split_blocks: set[tuple[int, int]] = set()
         # Set by the "Automatic clock sync" switch once its state is restored.
         # None means "not known yet": no automatic writes until then.
@@ -242,35 +257,16 @@ class SabianaModbusCoordinator(DataUpdateCoordinator[dict[int, int | None]]):
         results: dict[int, int | None] = {}
         blocks = group_contiguous(self._active_addresses, pairs=self._float32_bases)
 
-        for start, count in blocks:
-            if (start, count) not in self._split_blocks:
-                values = await self._client.read_register(
-                    address=start, count=count, slave=self._slave
-                )
-                if values is not None and len(values) == count:
-                    for offset, value in enumerate(values):
-                        results[start + offset] = value
-                    continue
-
-                if not self._client.connected:
-                    raise UpdateFailed(
-                        f"Lost connection to Sabiana unit at {self._host}:{self._port}"
-                    )
-
-                # Some devices reject reads that span unmapped registers: read
-                # this block one value at a time from now on.
-                LOGGER.debug(
-                    "Block read 0x%04X+%d failed; reading registers one by one",
-                    start,
-                    count,
-                )
-                self._split_blocks.add((start, count))
-
-            await self._async_read_block_fallback(start, count, results)
-            if not self._client.connected:
-                raise UpdateFailed(
-                    f"Lost connection to Sabiana unit at {self._host}:{self._port}"
-                )
+        try:
+            for start, count in blocks:
+                await self._async_read_block(start, count, results)
+        except SabianaCommunicationError as err:
+            # The unit (or the RS485 gateway) did not answer. Stop this poll
+            # instead of sending the remaining requests into a link that is
+            # not responding; the next poll tries again.
+            raise UpdateFailed(
+                f"No answer from Sabiana unit at {self._host}:{self._port}: {err}"
+            ) from err
 
         if self._active_addresses and all(v is None for v in results.values()):
             raise UpdateFailed(
@@ -279,21 +275,51 @@ class SabianaModbusCoordinator(DataUpdateCoordinator[dict[int, int | None]]):
 
         return results
 
+    async def _async_read_block(
+        self, start: int, count: int, results: dict[int, int | None]
+    ) -> None:
+        """Read one block into results.
+
+        Raises SabianaCommunicationError if the unit does not answer.
+        """
+        if (start, count) not in self._split_blocks:
+            values = await self._client.read_block(
+                address=start, count=count, slave=self._slave
+            )
+            if values is not None and len(values) == count:
+                for offset, value in enumerate(values):
+                    results[start + offset] = value
+                return
+
+            # The unit answered but refused the block (some devices reject
+            # reads that span unmapped registers): read it one value at a time
+            # from now on.
+            LOGGER.debug(
+                "Block read 0x%04X+%d refused; reading registers one by one",
+                start,
+                count,
+            )
+            self._split_blocks.add((start, count))
+
+        await self._async_read_block_fallback(start, count, results)
+
     async def _async_read_block_fallback(
         self, start: int, count: int, results: dict[int, int | None]
     ) -> None:
-        """Read a block register by register (float32 pairs in one request)."""
+        """Read a block register by register (float32 pairs in one request).
+
+        A register the unit refuses is stored as None. Raises
+        SabianaCommunicationError if the unit does not answer.
+        """
         address = start
         end = start + count
         while address < end:
             width = 2 if address in self._float32_bases else 1
-            values = await self._client.read_register(
+            values = await self._client.read_block(
                 address=address, count=width, slave=self._slave
             )
             for offset in range(width):
                 value = values[offset] if values and len(values) == width else None
                 results[address + offset] = value
                 LOGGER.debug("Read 0x%04X → %s", address + offset, value)
-            if values is None and not self._client.connected:
-                return
             address += width
