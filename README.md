@@ -58,6 +58,25 @@ The integration uses the UI (no YAML required). After install:
 - Unit ID
 - Polling interval
 
+### Polling options
+
+**Settings → Devices & Services → Sabiana Energy Smart → Configure** sets how
+the unit is polled. Saving reloads the integration.
+
+| Option | Default | Range | What it does |
+|--------|---------|-------|--------------|
+| Polling interval | 3 s | 1–300 s | Time between polls |
+| Answer timeout | 3 s | 0.5–30 s | How long to wait for each answer |
+| Retries after a timeout | 3 | 0–10 | How many times a request is resent |
+
+A request that gets no answer takes up to *timeout × (retries + 1)* seconds
+(12 s with the defaults) before the poll is given up. If the logs show
+`No response received after 3 retries` or `request ask for transaction_id=…
+but got id=…` (answers arriving after the timeout), the link to the unit is
+slow, which is common with RS485-to-Wi-Fi/Ethernet gateways: raise the polling
+interval (e.g. 10–15 s) and the timeout (e.g. 5 s), and lower the retries
+(e.g. 1).
+
 ---
 
 ## 🧾 Entities
@@ -97,6 +116,20 @@ unit (blocked-functions register `0x0226`, bit 5).
 ---
 
 ## ⚠️ Upgrade notes
+
+### Next release
+
+- **A poll with no answer now fails at once** and entities show `unavailable`
+  until the next poll that succeeds. Before, a timeout was mistaken for a
+  refused block: the integration switched that block to one-by-one reads for
+  good (until a restart), and each unanswered register cost another full
+  timeout. Startup could hang for minutes, and later polls sent many more
+  requests to an already slow link.
+- **One-by-one reads are now used only when the unit refuses a block** (Modbus
+  exception response), as intended.
+- **New polling options** (polling interval, answer timeout, retries); see
+  [Polling options](#polling-options). The defaults are the previous values,
+  so nothing changes until you set them.
 
 ### 1.1.0
 

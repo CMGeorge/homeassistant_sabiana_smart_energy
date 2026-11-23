@@ -10,10 +10,21 @@ from typing import Any
 
 from homeassistant import config_entries
 from homeassistant.const import CONF_HOST, CONF_NAME, CONF_PORT
+from homeassistant.core import callback
 from homeassistant.data_entry_flow import FlowResult
 import voluptuous as vol
 
-from .const import CONF_SLAVE, DOMAIN, LOGGER
+from .const import (
+    CONF_RETRIES,
+    CONF_SCAN_INTERVAL,
+    CONF_SLAVE,
+    CONF_TIMEOUT,
+    DEFAULT_RETRIES,
+    DEFAULT_SCAN_INTERVAL,
+    DEFAULT_TIMEOUT,
+    DOMAIN,
+    LOGGER,
+)
 from .modbus_client import SabianaModbusClient
 
 # Register read to check that a Sabiana unit answers (T1 temperature probe).
@@ -66,6 +77,14 @@ class MyModbusDeviceConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     # 1.2: entity unique IDs are prefixed with the config entry ID
     MINOR_VERSION = 2
 
+    @staticmethod
+    @callback
+    def async_get_options_flow(
+        config_entry: config_entries.ConfigEntry,
+    ) -> SabianaOptionsFlow:
+        """Return the options flow (polling interval, timeout, retries)."""
+        return SabianaOptionsFlow()
+
     async def async_step_user(self, user_input=None) -> FlowResult:
         """Handle the initial step of user configuration.
 
@@ -111,4 +130,40 @@ class MyModbusDeviceConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             step_id="user",
             data_schema=_build_schema(user_input),
             errors=errors,
+        )
+
+
+def build_options_schema(options: dict[str, Any]) -> vol.Schema:
+    """Schema for the polling options, pre-filled with the current values."""
+    return vol.Schema(
+        {
+            vol.Required(
+                CONF_SCAN_INTERVAL,
+                default=options.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL),
+            ): vol.All(vol.Coerce(int), vol.Range(min=1, max=300)),
+            vol.Required(
+                CONF_TIMEOUT,
+                default=options.get(CONF_TIMEOUT, DEFAULT_TIMEOUT),
+            ): vol.All(vol.Coerce(float), vol.Range(min=0.5, max=30)),
+            vol.Required(
+                CONF_RETRIES,
+                default=options.get(CONF_RETRIES, DEFAULT_RETRIES),
+            ): vol.All(vol.Coerce(int), vol.Range(min=0, max=10)),
+        }
+    )
+
+
+class SabianaOptionsFlow(config_entries.OptionsFlowWithReload):
+    """Polling options. Saving them reloads the integration."""
+
+    async def async_step_init(
+        self, user_input: dict[str, Any] | None = None
+    ) -> FlowResult:
+        """Show and save the polling options."""
+        if user_input is not None:
+            return self.async_create_entry(data=user_input)
+
+        return self.async_show_form(
+            step_id="init",
+            data_schema=build_options_schema(dict(self.config_entry.options)),
         )

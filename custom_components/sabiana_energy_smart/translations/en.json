@@ -19,5 +19,23 @@
     "abort": {
       "already_configured": "This device is already configured"
     }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Polling",
+        "description": "How often the unit is polled and how long to wait for its answer. A request that gets no answer takes up to timeout × (retries + 1) seconds before the poll is given up.",
+        "data": {
+          "scan_interval": "Polling interval (seconds)",
+          "timeout": "Answer timeout (seconds)",
+          "retries": "Retries after a timeout"
+        },
+        "data_description": {
+          "scan_interval": "Default 3. Raise it if the logs show timeouts or the RS485 gateway is slow.",
+          "timeout": "Default 3. How long to wait for each answer.",
+          "retries": "Default 3. 1 is usually enough on a reliable link."
+        }
+      }
+    }
   }
 }

@@ -8,15 +8,33 @@ import logging
 from pymodbus.client import AsyncModbusTcpClient
 from pymodbus.exceptions import ModbusException
 
+from .const import DEFAULT_RETRIES, DEFAULT_TIMEOUT
+
 _LOGGER = logging.getLogger(__name__)
+
+
+class SabianaCommunicationError(Exception):
+    """The unit did not answer (timeout, lost connection, garbled frame).
+
+    Different from an exception response, where the unit answers but refuses
+    the request (for example a block that spans unmapped registers).
+    """
 
 
 class SabianaModbusClient:
     """Handles persistent async Modbus TCP communication for Sabiana devices."""
 
-    def __init__(self, host: str, port: int) -> None:
+    def __init__(
+        self,
+        host: str,
+        port: int,
+        timeout: float = DEFAULT_TIMEOUT,
+        retries: int = DEFAULT_RETRIES,
+    ) -> None:
         self.host = host
         self.port = port
+        self.timeout = timeout
+        self.retries = retries
         self.client: AsyncModbusTcpClient | None = None
         self._closed = False
 
@@ -33,7 +51,12 @@ class SabianaModbusClient:
             return False
 
         if self.client is None:
-            self.client = AsyncModbusTcpClient(self.host, port=self.port)
+            self.client = AsyncModbusTcpClient(
+                self.host,
+                port=self.port,
+                timeout=self.timeout,
+                retries=self.retries,
+            )
 
         if not self.client.connected:
             try:
@@ -51,30 +74,51 @@ class SabianaModbusClient:
 
         return True
 
-    async def read_register(
+    async def read_block(
         self, address: int, count: int = 1, slave: int = 1
     ) -> list[int] | None:
-        """Read holding registers from Modbus server."""
+        """Read holding registers.
+
+        Returns None when the unit answers with an exception response (it
+        refuses the request). Raises SabianaCommunicationError when the unit
+        does not answer, so callers can tell "refused" from "no answer".
+        """
         if not await self.ensure_connected():
-            return None
+            raise SabianaCommunicationError(
+                f"Cannot connect to {self.host}:{self.port}"
+            )
 
         try:
             result = await self.client.read_holding_registers(
                 address=address, count=count, device_id=slave
             )
-            if result is None or result.isError():
-                _LOGGER.debug(
-                    "Read failed at address 0x%04X (count %d): %s",
-                    address,
-                    count,
-                    result,
-                )
-                return None
-            return result.registers
-        except ModbusException as me:
-            _LOGGER.warning("Modbus protocol error at 0x%04X: %s", address, me)
-        except Exception as e:
-            _LOGGER.error("Unexpected error reading 0x%04X: %s", address, e)
+        except ModbusException as err:
+            raise SabianaCommunicationError(str(err)) from err
+
+        if result is None:
+            raise SabianaCommunicationError(
+                f"No response for 0x{address:04X} (count {count})"
+            )
+        if result.isError():
+            _LOGGER.debug(
+                "Read refused at address 0x%04X (count %d): %s",
+                address,
+                count,
+                result,
+            )
+            return None
+        return result.registers
+
+    async def read_register(
+        self, address: int, count: int = 1, slave: int = 1
+    ) -> list[int] | None:
+        """Read holding registers; return None on any failure."""
+        try:
+            return await self.read_block(address=address, count=count, slave=slave)
+        except SabianaCommunicationError as err:
+            _LOGGER.warning("Modbus protocol error at 0x%04X: %s", address, err)
+        except Exception as err:
+            _LOGGER.error("Unexpected error reading 0x%04X: %s", address, err)
 
         return None
 

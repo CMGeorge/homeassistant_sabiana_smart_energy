@@ -5,6 +5,15 @@ from homeassistant.helpers.entity import EntityCategory
 DOMAIN = "sabiana_energy_smart"
 CONF_SLAVE = "slave"
 
+# Options (Settings → Devices & services → Sabiana → Configure).
+CONF_SCAN_INTERVAL = "scan_interval"
+CONF_TIMEOUT = "timeout"
+CONF_RETRIES = "retries"
+# Defaults match the behavior before these options existed.
+DEFAULT_SCAN_INTERVAL = 3  # seconds between polls
+DEFAULT_TIMEOUT = 3.0  # seconds to wait for an answer
+DEFAULT_RETRIES = 3  # resends after a timeout
+
 LOGGER = logging.getLogger(__package__)
 
 # Block 8 (Time and Day). See helpers.py for the encoding.
